@@ -34,6 +34,9 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
+import io.aiven.kafka.connect.http.mockserver.BodyRecorderHandler;
+import io.aiven.kafka.connect.http.mockserver.MockServer;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,7 +96,6 @@ final class IntegrationTest {
     @BeforeEach
     void setUp() throws ExecutionException, InterruptedException {
         mockServer = new MockServer(HTTP_PATH, AUTHORIZATION, CONTENT_TYPE);
-        mockServer.start();
 
         final Properties adminClientConfig = new Properties();
         adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
@@ -131,6 +133,10 @@ final class IntegrationTest {
     @Test
     @Timeout(10)
     final void testBasicDelivery() throws ExecutionException, InterruptedException {
+        final BodyRecorderHandler bodyRecorderHandler = new BodyRecorderHandler();
+        mockServer.addHandler(bodyRecorderHandler);
+        mockServer.start();
+
         final Map<String, String> connectorConfig = Map.of(
             "name", "test-source-connector",
             "connector.class", HttpSinkConnector.class.getName(),
@@ -165,15 +171,15 @@ final class IntegrationTest {
         }
 
         TestUtils.waitForCondition(
-            () -> mockServer.recorderBodies().size() >= expectedBodies.size(),
+            () -> bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size(),
             10000,
             "All requests received by HTTP server"
         );
-        assertIterableEquals(expectedBodies, mockServer.recorderBodies());
+        assertIterableEquals(expectedBodies, bodyRecorderHandler.recorderBodies());
 
         log.info("{} HTTP requests were expected, {} were successfully delivered",
             expectedBodies.size(),
-            mockServer.recorderBodies().size());
+            bodyRecorderHandler.recorderBodies().size());
     }
 
     private Future<RecordMetadata> sendMessageAsync(final String topicName,
