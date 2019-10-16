@@ -30,22 +30,26 @@ import org.apache.kafka.connect.errors.ConnectException;
 
 public class HttpSinkConfig extends AbstractConfig {
     private static final String GROUP_CONNECTION = "Connection";
-    public static final String HTTP_URL_CONFIG = "http.url";
-    public static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
+    private static final String HTTP_URL_CONFIG = "http.url";
+    private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
+    private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
+    private static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
 
-    public static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
-    public static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
+    private static final String GROUP_RETRIES = "Retries";
+    private static final String MAX_RETRIES_CONFIG = "max.retries";
+    private static final String RETRY_BACKOFF_MS_CONFIG = "retry.backoff.ms";
 
     public static final String NAME_CONFIG = "name";
 
     public static ConfigDef configDef() {
         final ConfigDef configDef = new ConfigDef();
         addConnectionConfigGroup(configDef);
+        addRetriesConfigGroup(configDef);
         return configDef;
     }
 
     private static void addConnectionConfigGroup(final ConfigDef configDef) {
-        int connectionGroupCounter = 0;
+        int groupCounter = 0;
         configDef.define(
             HTTP_URL_CONFIG,
             ConfigDef.Type.STRING,
@@ -69,7 +73,7 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Importance.HIGH,
             "The URL to send data to.",
             GROUP_CONNECTION,
-            connectionGroupCounter++,
+            groupCounter++,
             ConfigDef.Width.LONG,
             HTTP_URL_CONFIG
         );
@@ -100,7 +104,7 @@ public class HttpSinkConfig extends AbstractConfig {
             "The HTTP authorization type. "
                 + "The supported values are: " + supportedAuthorizationTypes + ".",
             GROUP_CONNECTION,
-            connectionGroupCounter++,
+            groupCounter++,
             ConfigDef.Width.SHORT,
             HTTP_AUTHORIZATION_TYPE_CONFIG,
             List.of(HTTP_HEADERS_AUTHORIZATION_CONFIG),
@@ -115,7 +119,7 @@ public class HttpSinkConfig extends AbstractConfig {
             "The static content of Authorization header. "
                 + "Must be set along with 'static' authorization type.",
             GROUP_CONNECTION,
-            connectionGroupCounter++,
+            groupCounter++,
             ConfigDef.Width.MEDIUM,
             HTTP_HEADERS_AUTHORIZATION_CONFIG,
             new ConfigDef.Recommender() {
@@ -138,9 +142,37 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Importance.LOW,
             "The value of Content-Type that will be send with each request.",
             GROUP_CONNECTION,
-            connectionGroupCounter++,
+            groupCounter++,
             ConfigDef.Width.MEDIUM,
             HTTP_HEADERS_CONTENT_TYPE_CONFIG
+        );
+    }
+
+    private static void addRetriesConfigGroup(final ConfigDef configDef) {
+        int groupCounter = 0;
+        configDef.define(
+            MAX_RETRIES_CONFIG,
+            ConfigDef.Type.INT,
+            1,
+            ConfigDef.Range.atLeast(0),
+            ConfigDef.Importance.MEDIUM,
+            "The maximum number of times to retry on errors when sending a batch before failing the task.",
+            GROUP_RETRIES,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            MAX_RETRIES_CONFIG
+        );
+        configDef.define(
+            RETRY_BACKOFF_MS_CONFIG,
+            ConfigDef.Type.INT,
+            3000,
+            ConfigDef.Range.atLeast(0),
+            ConfigDef.Importance.MEDIUM,
+            "The time in milliseconds to wait following an error before a retry attempt is made.",
+            GROUP_RETRIES,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            RETRY_BACKOFF_MS_CONFIG
         );
     }
 
@@ -199,6 +231,14 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final int batchSize() {
         return 1;
+    }
+
+    public int maxRetries() {
+        return getInt(MAX_RETRIES_CONFIG);
+    }
+
+    public int retryBackoffMs() {
+        return getInt(RETRY_BACKOFF_MS_CONFIG);
     }
 
     public final String connectorName() {

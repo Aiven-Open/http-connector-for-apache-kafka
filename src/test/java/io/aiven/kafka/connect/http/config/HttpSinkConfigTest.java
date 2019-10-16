@@ -52,6 +52,8 @@ final class HttpSinkConfigTest {
         assertEquals(new URL("http://localhost:8090"), config.httpUrl());
         assertEquals(AuthorizationType.NONE, config.authorizationType());
         assertNull(config.headerContentType());
+        assertEquals(1, config.maxRetries());
+        assertEquals(3000, config.retryBackoffMs());
     }
 
     @Test
@@ -159,5 +161,59 @@ final class HttpSinkConfigTest {
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
         assertEquals("application/json", config.headerContentType());
+    }
+
+    @Test
+    void negativeMaxRetries() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "max.retries", "-1"
+        );
+
+        final Throwable t = assertThrows(
+            ConfigException.class, () -> new HttpSinkConfig(properties)
+        );
+        assertEquals("Invalid value -1 for configuration max.retries: Value must be at least 0",
+            t.getMessage());
+    }
+
+    @Test
+    void correctMaxRetries() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "max.retries", "123"
+        );
+
+        final HttpSinkConfig config = new HttpSinkConfig(properties);
+        assertEquals(123, config.maxRetries());
+    }
+
+    @Test
+    void negativeRetryBackoffMs() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "retry.backoff.ms", "-1"
+        );
+
+        final Throwable t = assertThrows(
+            ConfigException.class, () -> new HttpSinkConfig(properties)
+        );
+        assertEquals("Invalid value -1 for configuration retry.backoff.ms: Value must be at least 0",
+            t.getMessage());
+    }
+
+    @Test
+    void correctRetryBackoffMs() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "retry.backoff.ms", "12345"
+        );
+
+        final HttpSinkConfig config = new HttpSinkConfig(properties);
+        assertEquals(12345, config.retryBackoffMs());
     }
 }
