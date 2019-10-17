@@ -54,6 +54,7 @@ final class HttpSinkConfigTest {
         assertNull(config.headerContentType());
         assertEquals(1, config.maxRetries());
         assertEquals(3000, config.retryBackoffMs());
+        assertEquals(10_000, config.maxOutstandingRecords());
     }
 
     @Test
@@ -215,5 +216,32 @@ final class HttpSinkConfigTest {
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
         assertEquals(12345, config.retryBackoffMs());
+    }
+
+    @Test
+    void negativeMaxOutstandingRecords() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "max.outstanding.records", "-1"
+        );
+
+        final Throwable t = assertThrows(
+            ConfigException.class, () -> new HttpSinkConfig(properties)
+        );
+        assertEquals("Invalid value -1 for configuration max.outstanding.records: Value must be at least 0",
+            t.getMessage());
+    }
+
+    @Test
+    void correctMaxOutstandingRecords() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "max.outstanding.records", "12345"
+        );
+
+        final HttpSinkConfig config = new HttpSinkConfig(properties);
+        assertEquals(12345, config.maxOutstandingRecords());
     }
 }

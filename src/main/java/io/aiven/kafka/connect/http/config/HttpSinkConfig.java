@@ -29,15 +29,16 @@ import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.errors.ConnectException;
 
 public class HttpSinkConfig extends AbstractConfig {
-    private static final String GROUP_CONNECTION = "Connection";
+    private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
     private static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
 
-    private static final String GROUP_RETRIES = "Retries";
+    private static final String DELIVERY_GROUP = "Delivery";
     private static final String MAX_RETRIES_CONFIG = "max.retries";
     private static final String RETRY_BACKOFF_MS_CONFIG = "retry.backoff.ms";
+    private static final String MAX_OUTSTANDING_RECORDS_CONFIG = "max.outstanding.records";
 
     public static final String NAME_CONFIG = "name";
 
@@ -72,7 +73,7 @@ public class HttpSinkConfig extends AbstractConfig {
             },
             ConfigDef.Importance.HIGH,
             "The URL to send data to.",
-            GROUP_CONNECTION,
+            CONNECTION_GROUP,
             groupCounter++,
             ConfigDef.Width.LONG,
             HTTP_URL_CONFIG
@@ -103,7 +104,7 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Importance.HIGH,
             "The HTTP authorization type. "
                 + "The supported values are: " + supportedAuthorizationTypes + ".",
-            GROUP_CONNECTION,
+            CONNECTION_GROUP,
             groupCounter++,
             ConfigDef.Width.SHORT,
             HTTP_AUTHORIZATION_TYPE_CONFIG,
@@ -118,7 +119,7 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Importance.MEDIUM,
             "The static content of Authorization header. "
                 + "Must be set along with 'static' authorization type.",
-            GROUP_CONNECTION,
+            CONNECTION_GROUP,
             groupCounter++,
             ConfigDef.Width.MEDIUM,
             HTTP_HEADERS_AUTHORIZATION_CONFIG,
@@ -141,7 +142,7 @@ public class HttpSinkConfig extends AbstractConfig {
             null,
             ConfigDef.Importance.LOW,
             "The value of Content-Type that will be send with each request.",
-            GROUP_CONNECTION,
+            CONNECTION_GROUP,
             groupCounter++,
             ConfigDef.Width.MEDIUM,
             HTTP_HEADERS_CONTENT_TYPE_CONFIG
@@ -157,7 +158,7 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Range.atLeast(0),
             ConfigDef.Importance.MEDIUM,
             "The maximum number of times to retry on errors when sending a batch before failing the task.",
-            GROUP_RETRIES,
+            DELIVERY_GROUP,
             groupCounter++,
             ConfigDef.Width.SHORT,
             MAX_RETRIES_CONFIG
@@ -169,10 +170,23 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Range.atLeast(0),
             ConfigDef.Importance.MEDIUM,
             "The time in milliseconds to wait following an error before a retry attempt is made.",
-            GROUP_RETRIES,
+            DELIVERY_GROUP,
             groupCounter++,
             ConfigDef.Width.SHORT,
             RETRY_BACKOFF_MS_CONFIG
+        );
+        configDef.define(
+            MAX_OUTSTANDING_RECORDS_CONFIG,
+            ConfigDef.Type.INT,
+            10_000,
+            ConfigDef.Range.atLeast(0),
+            ConfigDef.Importance.LOW,
+            "The maximum amount of records kept in memory by the connector waiting to be delivered. "
+                + "Serves for the back pressure.",
+            DELIVERY_GROUP,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            MAX_OUTSTANDING_RECORDS_CONFIG
         );
     }
 
@@ -239,6 +253,10 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public int retryBackoffMs() {
         return getInt(RETRY_BACKOFF_MS_CONFIG);
+    }
+
+    public int maxOutstandingRecords() {
+        return getInt(MAX_OUTSTANDING_RECORDS_CONFIG);
     }
 
     public final String connectorName() {

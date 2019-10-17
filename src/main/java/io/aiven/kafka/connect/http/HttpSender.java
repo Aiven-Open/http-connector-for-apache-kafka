@@ -26,7 +26,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.errors.RetriableException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,34 +62,16 @@ final class HttpSender {
         }
     }
 
-    void sendBatch(final String batch) {
+    void send(final String body) throws IOException, InterruptedException {
         final HttpRequest request = requestTemplate.copy()
-            .POST(HttpRequest.BodyPublishers.ofString(batch))
+            .POST(HttpRequest.BodyPublishers.ofString(body))
             .build();
         final HttpResponse<String> response;
-        try {
-            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            log.debug("Server replied with status code {} and body {}", response.statusCode(), response.body());
-        } catch (final IOException e) {
-            throw new RetriableException(e);
-        } catch (final InterruptedException e) {
-            throw new ConnectException(e);
-        }
+        response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        log.debug("Server replied with status code {} and body {}", response.statusCode(), response.body());
 
-        throwIfClientError(response);
-        throwIfServerError(response);
-    }
-
-    private void throwIfClientError(final HttpResponse<String> response) {
-        if (response.statusCode() >= 400 && response.statusCode() < 500) {
-            throw new ConnectException("Server replied with status code " + response.statusCode()
-                + " and body " + response.body());
-        }
-    }
-
-    private void throwIfServerError(final HttpResponse<String> response) {
-        if (response.statusCode() >= 500) {
-            throw new RetriableException("Server replied with status code " + response.statusCode()
+        if (response.statusCode() >= 400) {
+            throw new IOException("Server replied with status code " + response.statusCode()
                 + " and body " + response.body());
         }
     }

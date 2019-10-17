@@ -10,6 +10,14 @@
             <AppenderRef ref="Console"/>
         </Root>
 
+        <Logger name="io.aiven.kafka.connect.http" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.apache.kafka.connect" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
         <!-- These things in Kafka are quite noisy. -->
         <Logger name="org.reflections" level="error">
             <AppenderRef ref="Console"/>

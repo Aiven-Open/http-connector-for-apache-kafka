@@ -21,9 +21,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.server.Handler;
