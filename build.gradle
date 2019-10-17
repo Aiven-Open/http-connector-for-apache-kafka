@@ -1,0 +1,146 @@
+/*
+ * Copyright 2019 Aiven Oy
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    // https://docs.gradle.org/current/userguide/java_library_plugin.html
+    id 'java-library'
+
+    // https://docs.gradle.org/current/userguide/distribution_plugin.html
+    id 'distribution'
+
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    id 'checkstyle'
+
+    // https://docs.gradle.org/current/userguide/idea_plugin.html
+    id 'idea'
+}
+
+repositories {
+    jcenter()
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+ext {
+    moduleName = 'io.aiven.kafka.connect.http'
+
+    kafkaVersion = '2.0.1'
+    testcontainersVersion = '1.12.2'
+}
+
+distributions {
+    main {
+        contents {
+            from jar
+            from configurations.runtimeClasspath
+        }
+    }
+}
+
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integration-test/java')
+        resources.srcDir file('src/integration-test/resources')
+        compileClasspath += sourceSets.main.output + configurations.testRuntime
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+idea {
+    module {
+        testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
+        testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+dependencies {
+    compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
+    implementation 'org.slf4j:slf4j-api:1.7.28'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.5.2'
+    testImplementation 'org.hamcrest:hamcrest:2.1'
+    testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
+    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.12.1'
+
+//    integrationTestImplementation "org.apache.kafka:connect-api:$kafkaVersion"
+    integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+    integrationTestImplementation "org.apache.kafka:connect-json:$kafkaVersion"
+    integrationTestImplementation "org.apache.kafka:connect-transforms:$kafkaVersion"
+    integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
+    integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version
+    // Make test utils from 'test' available in 'integration-test'
+    integrationTestImplementation sourceSets.test.output
+}
+
+checkstyle {
+    toolVersion '8.25'
+}
+
+compileJava {
+    // Enable modules.
+    inputs.property('moduleName', moduleName)
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath
+        ]
+        classpath = files()
+    }
+}
+
+task integrationTest(type: Test) {
+    description = 'Runs the integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    dependsOn test, distTar
+
+    useJUnitPlatform()
+
+    // Run always.
+    outputs.upToDateWhen { false }
+
+    // Pass the distribution file path to the tests.
+    systemProperty("integration-test.distribution.file.path", distTar.archiveFile.get().asFile.path)
+}
+
+test {
+    useJUnitPlatform {
+        includeEngines 'junit-jupiter'
+    }
+}
+
+processResources {
+    filesMatching('aiven-kafka-connect-http-version.properties') {
+        expand(version: version)
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+                'Version': "${getArchiveVersion().get()}"
+        )
+    }
+}
