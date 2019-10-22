@@ -267,4 +267,12 @@ public class HttpSinkConfig extends AbstractConfig {
     public final String connectorName() {
         return originalsStrings().get(NAME_CONFIG);
     }
+
+    public static void main(final String... args) {
+        System.out.println("=========================================");
+        System.out.println("HTTP Sink connector Configuration Options");
+        System.out.println("=========================================");
+        System.out.println();
+        System.out.println(configDef().toEnrichedRst());
+    }
 }
