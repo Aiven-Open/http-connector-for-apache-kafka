@@ -144,3 +144,17 @@ jar {
         )
     }
 }
+
+task connectorConfigDoc {
+    description = "Generates the connector's configuration documentation."
+    group = "documentation"
+    dependsOn "classes"
+
+    doLast {
+        javaexec {
+            main = "io.aiven.kafka.connect.http.config.HttpSinkConfig"
+            classpath = sourceSets.main.runtimeClasspath + sourceSets.main.compileClasspath
+            standardOutput = new FileOutputStream("$projectDir/docs/sink-connector-config-options.rst")
+        }
+    }
+}
