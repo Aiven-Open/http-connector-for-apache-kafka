@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/aiven/aiven-kafka-connect-http.svg?branch=master)](https://travis-ci.org/aiven/aiven-kafka-connect-http)
 
-![HTTP logo](doc/IETF-Badge-HTTP.png)
+![HTTP logo](docs/IETF-Badge-HTTP.png)
 
 This is a sink [Kafka Connect](https://kafka.apache.org/documentation/#connect) connector that sends Kafka records over HTTP.
 
