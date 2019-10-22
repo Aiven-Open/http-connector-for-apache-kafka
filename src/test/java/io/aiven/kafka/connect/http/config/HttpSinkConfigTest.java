@@ -117,7 +117,7 @@ final class HttpSinkConfigTest {
             ConfigException.class, () -> new HttpSinkConfig(properties)
         );
         assertEquals("Invalid value unsupported for configuration http.authorization.type: "
-                + "supported values are: 'none', 'static'",
+                + "supported values are: [none, static]",
             t.getMessage());
     }
 
