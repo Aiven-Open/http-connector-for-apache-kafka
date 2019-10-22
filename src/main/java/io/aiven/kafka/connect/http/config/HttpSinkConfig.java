@@ -20,7 +20,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -70,6 +69,11 @@ public class HttpSinkConfig extends AbstractConfig {
                         throw new ConfigException(HTTP_URL_CONFIG, value, "malformed URL");
                     }
                 }
+
+                @Override
+                public String toString() {
+                    return "HTTP(S) ULRs";
+                }
             },
             ConfigDef.Importance.HIGH,
             "The URL to send data to.",
@@ -79,9 +83,6 @@ public class HttpSinkConfig extends AbstractConfig {
             HTTP_URL_CONFIG
         );
 
-        final String supportedAuthorizationTypes = AuthorizationType.names().stream()
-            .map(f -> "'" + f + "'")
-            .collect(Collectors.joining(", "));
         configDef.define(
             HTTP_AUTHORIZATION_TYPE_CONFIG,
             ConfigDef.Type.STRING,
@@ -97,13 +98,17 @@ public class HttpSinkConfig extends AbstractConfig {
                     if (!AuthorizationType.names().contains(valueStr)) {
                         throw new ConfigException(
                             HTTP_AUTHORIZATION_TYPE_CONFIG, valueStr,
-                            "supported values are: " + supportedAuthorizationTypes);
+                            "supported values are: " + AuthorizationType.names());
                     }
+                }
+
+                @Override
+                public String toString() {
+                    return AuthorizationType.names().toString();
                 }
             },
             ConfigDef.Importance.HIGH,
-            "The HTTP authorization type. "
-                + "The supported values are: " + supportedAuthorizationTypes + ".",
+            "The HTTP authorization type.",
             CONNECTION_GROUP,
             groupCounter++,
             ConfigDef.Width.SHORT,
