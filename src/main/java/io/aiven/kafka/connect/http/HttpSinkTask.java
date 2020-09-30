@@ -89,7 +89,7 @@ public final class HttpSinkTask extends SinkTask {
                     }
                     if (!(record.value() instanceof String)) {
                         throw new DataException(
-                            "Record value must be String, but " + record.getClass() + " + is given");
+                            "Record value must be String, but " + record.value().getClass() + " + is given");
                     }
 
                     final boolean sendResult = recordSender.send(record);
