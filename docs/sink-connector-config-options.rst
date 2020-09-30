@@ -34,6 +34,24 @@ Connection
   * Default: null
   * Importance: low
 
+Batching
+^^^^^^^^
+
+``batching.enabled``
+  Whether to enable batching multiple records in a single HTTP request.
+
+  * Type: boolean
+  * Default: false
+  * Importance: high
+
+``batch.max.size``
+  The maximum size of a record batch to be sent in a single HTTP request.
+
+  * Type: int
+  * Default: 500
+  * Valid Values: [1,...,1000000]
+  * Importance: medium
+
 Delivery
 ^^^^^^^^
 
