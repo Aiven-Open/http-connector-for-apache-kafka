@@ -58,8 +58,12 @@ public final class HttpSinkTask extends SinkTask {
                 config.headerContentType());
         }
 
-        recordSender = new RecordSender(httpSender,
-            config.maxRetries(), config.retryBackoffMs());
+        if (config.batchingEnabled()) {
+            recordSender = new BatchRecordSender(httpSender,
+                config.batchMaxSize(), config.maxRetries(), config.retryBackoffMs());
+        } else {
+            recordSender = new SingleRecordSender(httpSender, config.maxRetries(), config.retryBackoffMs());
+        }
     }
 
     @Override

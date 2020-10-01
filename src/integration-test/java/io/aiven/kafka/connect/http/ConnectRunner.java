@@ -59,6 +59,7 @@ final class ConnectRunner {
         workerProps.put("bootstrap.servers", bootstrapServers);
 
         workerProps.put("offset.flush.interval.ms", "5000");
+        workerProps.put("consumer.max.poll.records", "10000"); // big enough to not interfere with batching
 
         // These don't matter much (each connector sets its own converters), but need to be filled with valid classes.
         workerProps.put("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");

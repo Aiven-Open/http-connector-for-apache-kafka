@@ -18,7 +18,6 @@ package io.aiven.kafka.connect.http;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -26,7 +25,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class RecordSender {
+abstract class RecordSender {
     private static final Logger log = LoggerFactory.getLogger(RecordSender.class);
 
     private final HttpSender httpSender;
@@ -42,31 +41,27 @@ final class RecordSender {
         this.retryBackoffMs = retryBackoffMs;
     }
 
-    void send(final Collection<SinkRecord> records) throws InterruptedException {
-        for (final SinkRecord record : records) {
-            // TODO proper batching
-            final RecordBatch batch = new RecordBatch(List.of(record));
-            sendBatchWithRetries(batch);
-        }
-    }
+    abstract void send(final Collection<SinkRecord> records) throws InterruptedException;
 
-    private void sendBatchWithRetries(final RecordBatch batch) throws InterruptedException {
-        // TODO proper batching
-        final String body = (String) batch.records().get(0).value();
-
-        int remainRetries = RecordSender.this.maxRetries;
+    /**
+     * Sends a HTTP body using {@code httpSender}, respecting the configured retry policy.
+     *
+     * @return whether the sending was successful.
+     */
+    protected void sendWithRetries(final String body) throws InterruptedException {
+        int remainRetries = this.maxRetries;
         while (true) {
             try {
                 httpSender.send(body);
                 return;
             } catch (final IOException e) {
                 if (remainRetries > 0) {
-                    log.info("Sending batch failed, will retry in {} ms ({} retries remain)",
-                        RecordSender.this.retryBackoffMs, remainRetries, e);
+                    log.info("Sending failed, will retry in {} ms ({} retries remain)",
+                        this.retryBackoffMs, remainRetries, e);
                     remainRetries -= 1;
-                    Thread.sleep(RecordSender.this.retryBackoffMs);
+                    Thread.sleep(this.retryBackoffMs);
                 } else {
-                    log.error("Sending batch failed and no retries remain, stopping");
+                    log.error("Sending failed and no retries remain, stopping");
                     throw new ConnectException(e);
                 }
             }

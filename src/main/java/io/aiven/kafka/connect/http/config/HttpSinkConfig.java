@@ -34,6 +34,10 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
     private static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
 
+    private static final String BATCHING_GROUP = "Batching";
+    private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
+    private static final String BATCH_MAX_SIZE_CONFIG = "batch.max.size";
+
     private static final String DELIVERY_GROUP = "Delivery";
     private static final String MAX_RETRIES_CONFIG = "max.retries";
     private static final String RETRY_BACKOFF_MS_CONFIG = "retry.backoff.ms";
@@ -43,6 +47,7 @@ public class HttpSinkConfig extends AbstractConfig {
     public static ConfigDef configDef() {
         final ConfigDef configDef = new ConfigDef();
         addConnectionConfigGroup(configDef);
+        addBatchingConfigGroup(configDef);
         addRetriesConfigGroup(configDef);
         return configDef;
     }
@@ -153,6 +158,34 @@ public class HttpSinkConfig extends AbstractConfig {
         );
     }
 
+    private static void addBatchingConfigGroup(final ConfigDef configDef) {
+        int groupCounter = 0;
+        configDef.define(
+            BATCHING_ENABLED_CONFIG,
+            ConfigDef.Type.BOOLEAN,
+            false,
+            ConfigDef.Importance.HIGH,
+            "Whether to enable batching multiple records in a single HTTP request.",
+            BATCHING_GROUP,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            BATCHING_ENABLED_CONFIG
+        );
+
+        configDef.define(
+            BATCH_MAX_SIZE_CONFIG,
+            ConfigDef.Type.INT,
+            500,
+            ConfigDef.Range.between(1, 1_000_000),
+            ConfigDef.Importance.MEDIUM,
+            "The maximum size of a record batch to be sent in a single HTTP request.",
+            BATCHING_GROUP,
+            groupCounter++,
+            ConfigDef.Width.MEDIUM,
+            BATCHING_GROUP
+        );
+    }
+
     private static void addRetriesConfigGroup(final ConfigDef configDef) {
         int groupCounter = 0;
         configDef.define(
@@ -234,8 +267,12 @@ public class HttpSinkConfig extends AbstractConfig {
         return getString(HTTP_HEADERS_CONTENT_TYPE_CONFIG);
     }
 
-    public final int batchSize() {
-        return 1;
+    public final boolean batchingEnabled() {
+        return getBoolean(BATCHING_ENABLED_CONFIG);
+    }
+
+    public final int batchMaxSize() {
+        return getInt(BATCH_MAX_SIZE_CONFIG);
     }
 
     public int maxRetries() {

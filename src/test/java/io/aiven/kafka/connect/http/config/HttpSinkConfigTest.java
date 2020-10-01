@@ -28,8 +28,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class HttpSinkConfigTest {
     @Test
@@ -52,6 +54,8 @@ final class HttpSinkConfigTest {
         assertEquals(new URL("http://localhost:8090"), config.httpUrl());
         assertEquals(AuthorizationType.NONE, config.authorizationType());
         assertNull(config.headerContentType());
+        assertFalse(config.batchingEnabled());
+        assertEquals(500, config.batchMaxSize());
         assertEquals(1, config.maxRetries());
         assertEquals(3000, config.retryBackoffMs());
     }
@@ -161,6 +165,36 @@ final class HttpSinkConfigTest {
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
         assertEquals("application/json", config.headerContentType());
+    }
+
+    @Test
+    void correctBatching() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "batching.enabled", "true",
+            "batch.max.size", "123456"
+        );
+
+        final HttpSinkConfig config = new HttpSinkConfig(properties);
+        assertTrue(config.batchingEnabled());
+        assertEquals(123456, config.batchMaxSize());
+    }
+
+    @Test
+    void tooBigBatchSize() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "batching.enabled", "true",
+            "batch.max.size", "1000001"
+        );
+
+        final Throwable t = assertThrows(
+            ConfigException.class, () -> new HttpSinkConfig(properties)
+        );
+        assertEquals("Invalid value 1000001 for configuration batch.max.size: Value must be no more than 1000000",
+            t.getMessage());
     }
 
     @Test
