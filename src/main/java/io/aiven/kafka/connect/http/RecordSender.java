@@ -17,15 +17,10 @@
 package io.aiven.kafka.connect.http;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.utils.CopyOnWriteMap;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import org.slf4j.Logger;
@@ -39,88 +34,40 @@ final class RecordSender {
     private final int maxRetries;
     private final int retryBackoffMs;
 
-    private final RecordQueue outstandingRecords;
-    private volatile Exception sendException = null;
-    private final Map<TopicPartition, OffsetAndMetadata> lastSentOffsets = new CopyOnWriteMap<>();
-
-    private final ExecutorService executorService;
-
     RecordSender(final HttpSender httpSender,
-                 final int maxOutstandingRecords,
                  final int maxRetries, final int retryBackoffMs) {
         this.httpSender = httpSender;
 
-        this.outstandingRecords = new RecordQueue(maxOutstandingRecords);
-
         this.maxRetries = maxRetries;
         this.retryBackoffMs = retryBackoffMs;
-
-        this.executorService = Executors.newSingleThreadExecutor();
-        this.executorService.submit(new BackgroundSender());
     }
 
-    boolean send(final SinkRecord record) {
-        return outstandingRecords.offer(record);
-    }
-
-    Exception sendException() {
-        return sendException;
-    }
-
-    Map<TopicPartition, OffsetAndMetadata> lastSentOffsets() {
-        return lastSentOffsets;
-    }
-
-    void stop() {
-        executorService.shutdownNow();
-    }
-
-    private final class BackgroundSender implements Runnable {
-        @Override
-        public void run() {
-            try {
-                while (true) {
-                    final SinkRecord record = outstandingRecords.poll(1, TimeUnit.SECONDS);
-                    if (record == null) {
-                        continue;
-                    }
-
-                    // TODO proper batching
-                    final RecordBatch batch = new RecordBatch(List.of(record));
-                    if (!sendBatchWithRetries(batch)) {
-                        return;
-                    }
-
-                    lastSentOffsets.putAll(batch.latestOffsets());
-                }
-            } catch (final InterruptedException e) {
-                log.info("Interrupted", e);
-            }
-        }
-
-        private boolean sendBatchWithRetries(final RecordBatch batch) throws InterruptedException {
-            log.debug("Sending batch {}", batch);
-
+    void send(final Collection<SinkRecord> records) throws InterruptedException {
+        for (final SinkRecord record : records) {
             // TODO proper batching
-            final String body = (String) batch.records().get(0).value();
+            final RecordBatch batch = new RecordBatch(List.of(record));
+            sendBatchWithRetries(batch);
+        }
+    }
 
-            int remainRetries = RecordSender.this.maxRetries;
-            while (true) {
-                try {
-                    httpSender.send(body);
-                    return true;
-                } catch (final IOException e) {
-                    if (remainRetries > 0) {
-                        log.info("Sending batch {} failed, will retry in {} ms ({} retries remain)",
-                            batch, RecordSender.this.retryBackoffMs, remainRetries, e);
-                        remainRetries -= 1;
-                        Thread.sleep(RecordSender.this.retryBackoffMs);
-                    } else {
-                        log.error("Sending batch {} failed and no retries remain, stopping",
-                            batch);
-                        sendException = e;
-                        return false;
-                    }
+    private void sendBatchWithRetries(final RecordBatch batch) throws InterruptedException {
+        // TODO proper batching
+        final String body = (String) batch.records().get(0).value();
+
+        int remainRetries = RecordSender.this.maxRetries;
+        while (true) {
+            try {
+                httpSender.send(body);
+                return;
+            } catch (final IOException e) {
+                if (remainRetries > 0) {
+                    log.info("Sending batch failed, will retry in {} ms ({} retries remain)",
+                        RecordSender.this.retryBackoffMs, remainRetries, e);
+                    remainRetries -= 1;
+                    Thread.sleep(RecordSender.this.retryBackoffMs);
+                } else {
+                    log.error("Sending batch failed and no retries remain, stopping");
+                    throw new ConnectException(e);
                 }
             }
         }

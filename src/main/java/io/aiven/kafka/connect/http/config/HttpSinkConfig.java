@@ -37,7 +37,6 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String DELIVERY_GROUP = "Delivery";
     private static final String MAX_RETRIES_CONFIG = "max.retries";
     private static final String RETRY_BACKOFF_MS_CONFIG = "retry.backoff.ms";
-    private static final String MAX_OUTSTANDING_RECORDS_CONFIG = "max.outstanding.records";
 
     public static final String NAME_CONFIG = "name";
 
@@ -180,19 +179,6 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Width.SHORT,
             RETRY_BACKOFF_MS_CONFIG
         );
-        configDef.define(
-            MAX_OUTSTANDING_RECORDS_CONFIG,
-            ConfigDef.Type.INT,
-            10_000,
-            ConfigDef.Range.atLeast(0),
-            ConfigDef.Importance.LOW,
-            "The maximum amount of records kept in memory by the connector waiting to be delivered. "
-                + "Serves for the back pressure.",
-            DELIVERY_GROUP,
-            groupCounter++,
-            ConfigDef.Width.SHORT,
-            MAX_OUTSTANDING_RECORDS_CONFIG
-        );
     }
 
     public HttpSinkConfig(final Map<String, String> properties) {
@@ -258,10 +244,6 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public int retryBackoffMs() {
         return getInt(RETRY_BACKOFF_MS_CONFIG);
-    }
-
-    public int maxOutstandingRecords() {
-        return getInt(MAX_OUTSTANDING_RECORDS_CONFIG);
     }
 
     public final String connectorName() {

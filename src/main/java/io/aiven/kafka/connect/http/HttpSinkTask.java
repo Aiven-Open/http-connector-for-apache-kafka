@@ -20,11 +20,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
-import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 
@@ -35,11 +32,6 @@ import org.slf4j.LoggerFactory;
 
 public final class HttpSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(HttpSinkTask.class);
-
-    private static final RetriableException CANNOT_ACCEPT_RECORDS_EXCEPTION =
-        new RetriableException("Cannot accept records, some previous records are being sent");
-
-    private HttpSinkConfig config;
 
     private HttpSender httpSender;
     private RecordSender recordSender;
@@ -57,7 +49,7 @@ public final class HttpSinkTask extends SinkTask {
     public void start(final Map<String, String> props) {
         Objects.requireNonNull(props);
 
-        this.config = new HttpSinkConfig(props);
+        final var config = new HttpSinkConfig(props);
 
         if (this.httpSender == null) {
             this.httpSender = new HttpSender(
@@ -67,7 +59,6 @@ public final class HttpSinkTask extends SinkTask {
         }
 
         recordSender = new RecordSender(httpSender,
-            config.maxOutstandingRecords(),
             config.maxRetries(), config.retryBackoffMs());
     }
 
@@ -75,49 +66,28 @@ public final class HttpSinkTask extends SinkTask {
     public void put(final Collection<SinkRecord> records) {
         log.debug("Received {} records", records.size());
 
-        if (recordSender.sendException() != null) {
-            throw new ConnectException(recordSender.sendException());
-        }
-//        context.timeout(1000);
-
         if (!records.isEmpty()) {
-            int recordsAccepted = 0;
-            try {
-                for (final SinkRecord record : records) {
-                    if (record.value() == null) {
-                        throw new DataException("Record value must not be null");
-                    }
-                    if (!(record.value() instanceof String)) {
-                        throw new DataException(
-                            "Record value must be String, but " + record.value().getClass() + " + is given");
-                    }
-
-                    final boolean sendResult = recordSender.send(record);
-                    if (sendResult) {
-                        recordsAccepted += 1;
-                    } else {
-                        throw CANNOT_ACCEPT_RECORDS_EXCEPTION;
-                    }
+            for (final SinkRecord record : records) {
+                if (record.value() == null) {
+                    throw new DataException("Record value must not be null");
                 }
-            } finally {
-                // When debugging, don't forget that another thread is consuming records in the background.
-                log.debug("Accepted records: {} / {}", recordsAccepted, records.size());
+                if (!(record.value() instanceof String)) {
+                    throw new DataException(
+                        "Record value must be String, but " + record.value().getClass() + " + is given");
+                }
+            }
+
+            try {
+                recordSender.send(records);
+            } catch (final InterruptedException e) {
+                throw new ConnectException(e);
             }
         }
     }
 
     @Override
-    public Map<TopicPartition, OffsetAndMetadata> preCommit(
-        final Map<TopicPartition, OffsetAndMetadata> currentOffsets
-    ) {
-        return recordSender.lastSentOffsets();
-    }
-
-    @Override
     public void stop() {
-        if (recordSender != null) {
-            recordSender.stop();
-        }
+        // do nothing
     }
 
     @Override

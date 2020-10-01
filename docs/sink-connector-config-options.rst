@@ -53,12 +53,4 @@ Delivery
   * Valid Values: [0,...]
   * Importance: medium
 
-``max.outstanding.records``
-  The maximum amount of records kept in memory by the connector waiting to be delivered. Serves for the back pressure.
-
-  * Type: int
-  * Default: 10000
-  * Valid Values: [0,...]
-  * Importance: low
-
 

@@ -144,7 +144,6 @@ final class IntegrationTest {
         mockServer.start();
 
         final Map<String, String> config = basicConnectorConfig();
-        config.put("max.outstanding.records", "345");
         connectRunner.createConnector(config);
 
         final List<String> expectedBodies = new ArrayList<>();
