@@ -293,6 +293,10 @@ final class IntegrationTest {
                 }
             }
         }
+        if (batchRecordCnt > 0) {
+            expectedBodies.add(currentBody.toString());
+        }
+
         producer.flush();
         for (final Future<RecordMetadata> sendFuture : sendFutures) {
             sendFuture.get();
