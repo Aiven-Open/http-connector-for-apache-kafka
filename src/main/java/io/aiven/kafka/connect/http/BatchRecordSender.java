@@ -46,6 +46,11 @@ final class BatchRecordSender extends RecordSender {
                 sendWithRetries(body);
             }
         }
+
+        if (!batch.isEmpty()) {
+            final String body = createRequestBody(batch);
+            sendWithRetries(body);
+        }
     }
 
     private String createRequestBody(final Collection<SinkRecord> batch) {
