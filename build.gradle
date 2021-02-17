@@ -30,6 +30,9 @@ plugins {
 
 repositories {
     jcenter()
+    maven {
+        url "https://packages.confluent.io/maven"
+    }
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
@@ -39,7 +42,8 @@ ext {
     moduleName = 'io.aiven.kafka.connect.http'
 
     kafkaVersion = '2.0.1'
-    testcontainersVersion = '1.12.2'
+    testcontainersVersion = '1.14.3'
+    confluentPlatformVersion = "4.1.4"
 }
 
 distributions {
@@ -74,17 +78,23 @@ configurations {
 
 dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
-    implementation 'org.slf4j:slf4j-api:1.7.28'
+    compileOnly "org.apache.kafka:connect-json:$kafkaVersion"
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.5.2'
-    testImplementation 'org.hamcrest:hamcrest:2.1'
+    implementation "org.slf4j:slf4j-api:1.7.28"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.5.2"
+    testImplementation "org.hamcrest:hamcrest:2.1"
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
-    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.12.1'
+    testRuntime "org.apache.logging.log4j:log4j-slf4j-impl:2.12.1"
+    testRuntime "com.fasterxml.jackson.core:jackson-databind:2.9.10"
+    testRuntime "org.apache.kafka:connect-json:$kafkaVersion"
 
-//    integrationTestImplementation "org.apache.kafka:connect-api:$kafkaVersion"
     integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion") {
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
     }
+    integrationTestImplementation "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
+    integrationTestImplementation "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
+    integrationTestImplementation "org.apache.avro:avro:1.8.1"
     integrationTestImplementation "org.apache.kafka:connect-json:$kafkaVersion"
     integrationTestImplementation "org.apache.kafka:connect-transforms:$kafkaVersion"
     integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"

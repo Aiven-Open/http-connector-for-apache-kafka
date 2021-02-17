@@ -29,7 +29,7 @@ final class SingleRecordSender extends RecordSender {
     @Override
     void send(final Collection<SinkRecord> records) throws InterruptedException {
         for (final SinkRecord record : records) {
-            final String body = (String) record.value();
+            final String body = recordValueConverter.convert(record);
             sendWithRetries(body);
         }
     }

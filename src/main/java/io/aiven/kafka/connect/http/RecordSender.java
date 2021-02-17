@@ -22,6 +22,8 @@ import java.util.Collection;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import io.aiven.kafka.connect.http.converter.RecordValueConverter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +34,8 @@ abstract class RecordSender {
 
     private final int maxRetries;
     private final int retryBackoffMs;
+
+    protected final RecordValueConverter recordValueConverter = new RecordValueConverter();
 
     RecordSender(final HttpSender httpSender,
                  final int maxRetries, final int retryBackoffMs) {

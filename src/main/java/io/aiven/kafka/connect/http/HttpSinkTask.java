@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy
+ * Copyright 2021 Aiven Oy
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,12 +75,7 @@ public final class HttpSinkTask extends SinkTask {
                 if (record.value() == null) {
                     throw new DataException("Record value must not be null");
                 }
-                if (!(record.value() instanceof String)) {
-                    throw new DataException(
-                        "Record value must be String, but " + record.value().getClass() + " + is given");
-                }
             }
-
             try {
                 recordSender.send(records);
             } catch (final InterruptedException e) {
