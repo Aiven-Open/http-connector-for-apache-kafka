@@ -48,6 +48,13 @@ jobs:
           echo tar_path=`realpath ./build/distributions/${tar_file}` >> $GITHUB_ENV
           echo zip_path=`realpath ./build/distributions/${zip_file}` >> $GITHUB_ENV
 
+      - name: Create tag
+        run: |
+          git config --local user.name "GitHub Action"
+          git config --local user.email "action@github.com"
+          git tag -a "v${{ env.version }}" -m "Release version ${{ env.version }}"
+          git push origin "v${{ env.version }}"
+
       - name: Create release draft
         id: create_release
         uses: actions/create-release@v1
