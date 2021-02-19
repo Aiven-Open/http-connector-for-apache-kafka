@@ -56,7 +56,7 @@ final class BatchRecordSender extends RecordSender {
     private String createRequestBody(final Collection<SinkRecord> batch) {
         final StringBuilder result = new StringBuilder();
         for (final SinkRecord record : batch) {
-            result.append((String) record.value());
+            result.append(recordValueConverter.convert(record));
             result.append(BATCH_RECORD_SEPARATOR);
         }
         return result.toString();
