@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package io.aiven.kafka.connect.http;
+package io.aiven.kafka.connect.http.recordsender;
 
 import java.util.Collection;
 
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import io.aiven.kafka.connect.http.sender.HttpSender;
+
 final class SingleRecordSender extends RecordSender {
-    SingleRecordSender(final HttpSender httpSender,
-                       final int maxRetries, final int retryBackoffMs) {
-        super(httpSender, maxRetries, retryBackoffMs);
+
+    protected SingleRecordSender(final HttpSender httpSender) {
+        super(httpSender);
     }
 
     @Override
-    void send(final Collection<SinkRecord> records) throws InterruptedException {
+    public void send(final Collection<SinkRecord> records) {
         for (final SinkRecord record : records) {
             final String body = recordValueConverter.convert(record);
-            sendWithRetries(body);
+            httpSender.send(body);
         }
     }
+
 }

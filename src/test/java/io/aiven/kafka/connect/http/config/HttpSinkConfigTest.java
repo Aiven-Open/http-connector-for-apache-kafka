@@ -61,7 +61,7 @@ final class HttpSinkConfigTest {
     }
 
     @Test
-    void invalidUrl() throws MalformedURLException {
+    void invalidUrl() {
         final Map<String, String> properties = Map.of(
             "http.url", "#http://localhost:8090",
             "http.authorization.type", "none"
@@ -71,17 +71,6 @@ final class HttpSinkConfigTest {
             ConfigException.class,
             () -> new HttpSinkConfig(properties));
         assertEquals("Invalid value #http://localhost:8090 for configuration http.url: malformed URL",
-            t.getMessage());
-    }
-
-    @Test
-    void missingAuthorizationType() {
-        final Map<String, String> properties = Map.of(
-            "http.url", "http://localhost:8090"
-        );
-
-        final Throwable t = assertThrows(ConfigException.class, () -> new HttpSinkConfig(properties));
-        assertEquals("Missing required configuration \"http.authorization.type\" which has no default value.",
             t.getMessage());
     }
 

@@ -20,12 +20,13 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
+import io.aiven.kafka.connect.http.recordsender.RecordSender;
+import io.aiven.kafka.connect.http.sender.HttpSender;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,32 +39,21 @@ public final class HttpSinkTask extends SinkTask {
 
     // required by Connect
     public HttpSinkTask() {
+        this(null);
     }
 
-    // for testing
-    HttpSinkTask(final HttpSender httpSender) {
+    protected HttpSinkTask(final HttpSender httpSender) {
         this.httpSender = httpSender;
     }
 
     @Override
     public void start(final Map<String, String> props) {
         Objects.requireNonNull(props);
-
         final var config = new HttpSinkConfig(props);
-
         if (this.httpSender == null) {
-            this.httpSender = new HttpSender(
-                config.httpUrl(),
-                config.headerAuthorization(),
-                config.headerContentType());
+            this.httpSender = HttpSender.createHttpSender(config);
         }
-
-        if (config.batchingEnabled()) {
-            recordSender = new BatchRecordSender(httpSender,
-                config.batchMaxSize(), config.maxRetries(), config.retryBackoffMs());
-        } else {
-            recordSender = new SingleRecordSender(httpSender, config.maxRetries(), config.retryBackoffMs());
-        }
+        recordSender = RecordSender.createRecordSender(httpSender, config);
     }
 
     @Override
@@ -76,11 +66,7 @@ public final class HttpSinkTask extends SinkTask {
                     throw new DataException("Record value must not be null");
                 }
             }
-            try {
-                recordSender.send(records);
-            } catch (final InterruptedException e) {
-                throw new ConnectException(e);
-            }
+            recordSender.send(records);
         }
     }
 
@@ -93,4 +79,5 @@ public final class HttpSinkTask extends SinkTask {
     public String version() {
         return Version.VERSION;
     }
+
 }
