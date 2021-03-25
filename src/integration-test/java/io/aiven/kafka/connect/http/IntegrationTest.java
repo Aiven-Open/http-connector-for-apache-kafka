@@ -204,7 +204,7 @@ final class IntegrationTest {
 
         TestUtils.waitForCondition(
             () -> bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size(),
-            10000,
+            10_000,
             "All requests received by HTTP server"
         );
         log.info("Recorded request bodies: {}", bodyRecorderHandler.recorderBodies());

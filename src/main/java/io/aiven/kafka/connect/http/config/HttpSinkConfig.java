@@ -90,7 +90,7 @@ public class HttpSinkConfig extends AbstractConfig {
         configDef.define(
             HTTP_AUTHORIZATION_TYPE_CONFIG,
             ConfigDef.Type.STRING,
-            ConfigDef.NO_DEFAULT_VALUE,
+            AuthorizationType.NONE.name,
             new ConfigDef.Validator() {
                 @Override
                 public void ensureValid(final String name, final Object value) {

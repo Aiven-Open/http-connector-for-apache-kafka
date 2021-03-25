@@ -44,7 +44,6 @@ import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
@@ -149,7 +148,6 @@ public class AvroIntegrationTest {
 
     @Test
     @Timeout(30)
-    @Disabled
     final void testBasicDelivery() throws ExecutionException, InterruptedException {
         final BodyRecorderHandler bodyRecorderHandler = new BodyRecorderHandler();
         mockServer.addHandler(bodyRecorderHandler);

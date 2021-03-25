@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.aiven.kafka.connect.http;
+package io.aiven.kafka.connect.http.recordsender;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,34 +22,33 @@ import java.util.List;
 
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import io.aiven.kafka.connect.http.sender.HttpSender;
+
 final class BatchRecordSender extends RecordSender {
     private static final String BATCH_RECORD_SEPARATOR = "\n";
 
     private final int batchMaxSize;
 
-    BatchRecordSender(final HttpSender httpSender,
-                      final int batchMaxSize,
-                      final int maxRetries, final int retryBackoffMs) {
-        super(httpSender, maxRetries, retryBackoffMs);
+    protected BatchRecordSender(final HttpSender httpSender, final int batchMaxSize) {
+        super(httpSender);
         this.batchMaxSize = batchMaxSize;
     }
 
     @Override
-    void send(final Collection<SinkRecord> records) throws InterruptedException {
+    public void send(final Collection<SinkRecord> records) {
         final List<SinkRecord> batch = new ArrayList<>(batchMaxSize);
         for (final var record : records) {
             batch.add(record);
             if (batch.size() >= batchMaxSize) {
                 final String body = createRequestBody(batch);
                 batch.clear();
-
-                sendWithRetries(body);
+                httpSender.send(body);
             }
         }
 
         if (!batch.isEmpty()) {
             final String body = createRequestBody(batch);
-            sendWithRetries(body);
+            httpSender.send(body);
         }
     }
 
