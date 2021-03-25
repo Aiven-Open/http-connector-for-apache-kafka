@@ -81,12 +81,17 @@ dependencies {
     compileOnly "org.apache.kafka:connect-json:$kafkaVersion"
 
     implementation "org.slf4j:slf4j-api:1.7.28"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.12.2"
 
-    testImplementation "org.junit.jupiter:junit-jupiter:5.5.2"
     testImplementation "org.hamcrest:hamcrest:2.1"
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.7.1"
+    testImplementation "org.mockito:mockito-core:3.8.0"
+    testImplementation "org.mockito:mockito-junit-jupiter:3.8.0"
+
     testRuntime "org.apache.logging.log4j:log4j-slf4j-impl:2.12.1"
-    testRuntime "com.fasterxml.jackson.core:jackson-databind:2.9.10"
+    testRuntime "com.fasterxml.jackson.core:jackson-databind:2.12.2"
     testRuntime "org.apache.kafka:connect-json:$kafkaVersion"
 
     integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion") {

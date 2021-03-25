@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 public enum AuthorizationType {
     NONE("none"),
+    OAUTH2("oauth2"),
     STATIC("static");
 
     public final String name;
@@ -36,6 +37,8 @@ public enum AuthorizationType {
 
         if (NONE.name.equalsIgnoreCase(name)) {
             return NONE;
+        } else if (OAUTH2.name.equalsIgnoreCase(name)) {
+            return OAUTH2;
         } else if (STATIC.name.equalsIgnoreCase(name)) {
             return STATIC;
         } else {
@@ -43,7 +46,6 @@ public enum AuthorizationType {
         }
     }
 
-    public static Collection<String> names() {
-        return Arrays.stream(values()).map(v -> v.name).collect(Collectors.toList());
-    }
+    public static final Collection<String> NAMES =
+            Arrays.stream(values()).map(v -> v.name).collect(Collectors.toList());
 }

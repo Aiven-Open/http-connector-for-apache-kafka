@@ -17,11 +17,9 @@
 package io.aiven.kafka.connect.http.sender;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.connect.errors.ConnectException;
@@ -31,53 +29,44 @@ import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class HttpSender {
+public class HttpSender {
 
     private static final Logger log = LoggerFactory.getLogger(HttpSender.class);
 
-    protected static final String HEADER_AUTHORIZATION = "Authorization";
-
-    protected static final String HEADER_CONTENT_TYPE = "Content-Type";
-
-    private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(30);
-
-    private final HttpClient httpClient;
-
-    protected final HttpRequest.Builder requestTemplate;
+    protected final HttpClient httpClient;
 
     protected final HttpSinkConfig config;
 
-    protected interface OnResponseHandler {
-
-        void onResponse(final HttpResponse<String> response) throws IOException;
-
-    }
-
-    protected final OnResponseHandler onHttpErrorResponseHandler = response -> {
-        if (response.statusCode() >= 400) {
-            if (response.statusCode() < 200 || response.statusCode() > 299) {
-                log.warn("Got unexpected HTTP status code: {}", response.statusCode());
-            }
-            throw new IOException("Server replied with status code " + response.statusCode()
-                    + " and body " + response.body());
-        }
-    };
+    private final HttpRequestBuilder httpRequestBuilder;
 
     protected HttpSender(final HttpSinkConfig config) {
+        this(config, HttpRequestBuilder.DEFAULT_HTTP_REQUEST_BUILDER, HttpClient.newHttpClient());
+    }
+
+    protected HttpSender(final HttpSinkConfig config,
+                         final HttpRequestBuilder httpRequestBuilder) {
+        this(config, httpRequestBuilder, HttpClient.newHttpClient());
+    }
+
+    protected HttpSender(final HttpSinkConfig config,
+                         final HttpClient httpClient) {
+        this(config, HttpRequestBuilder.DEFAULT_HTTP_REQUEST_BUILDER, httpClient);
+    }
+
+    protected HttpSender(final HttpSinkConfig config,
+                         final HttpRequestBuilder httpRequestBuilder,
+                         final HttpClient httpClient) {
         this.config = config;
-        this.httpClient = HttpClient.newHttpClient();
-        try {
-            requestTemplate = HttpRequest.newBuilder(config.httpUrl().toURI()).timeout(HTTP_TIMEOUT);
-        } catch (final URISyntaxException e) {
-            throw new ConnectException(e);
-        }
+        this.httpRequestBuilder = httpRequestBuilder;
+        this.httpClient = httpClient;
     }
 
     public final void send(final String body) {
-        final HttpRequest request = requestTemplate.copy()
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-        sendWithRetries(request, onHttpErrorResponseHandler);
+        final var requestBuilder =
+                httpRequestBuilder
+                        .build(config)
+                        .POST(HttpRequest.BodyPublishers.ofString(body));
+        sendWithRetries(requestBuilder, HttpResponseHandler.ON_HTTP_ERROR_RESPONSE_HANDLER);
     }
 
     /**
@@ -85,17 +74,17 @@ public abstract class HttpSender {
      *
      * @return whether the sending was successful.
      */
-    protected void sendWithRetries(final HttpRequest request,
-                                   final OnResponseHandler onHttpResponseHandler) {
+    protected HttpResponse<String> sendWithRetries(final HttpRequest.Builder requestBuilder,
+                                                   final HttpResponseHandler httpResponseHandler) {
         int remainRetries = config.maxRetries();
         while (remainRetries >= 0) {
             try {
                 try {
                     final var response =
-                            httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                            httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
                     log.debug("Server replied with status code {} and body {}", response.statusCode(), response.body());
-                    onHttpResponseHandler.onResponse(response);
-                    return;
+                    httpResponseHandler.onResponse(response);
+                    return response;
                 } catch (final IOException e) {
                     log.info("Sending failed, will retry in {} ms ({} retries remain)",
                             config.retryBackoffMs(), remainRetries, e);
@@ -103,7 +92,7 @@ public abstract class HttpSender {
                     TimeUnit.MILLISECONDS.sleep(config.retryBackoffMs());
                 }
             } catch (final InterruptedException e) {
-                log.error("Sending failed due to InterruptedException, stopping");
+                log.error("Sending failed due to InterruptedException, stopping", e);
                 throw new ConnectException(e);
             }
         }
@@ -113,31 +102,14 @@ public abstract class HttpSender {
 
     public static HttpSender createHttpSender(final HttpSinkConfig config) {
         switch (config.authorizationType()) {
-            case STATIC:
-                return new StaticAuthHttpSender(config);
             case NONE:
-                return new NoAuthHttpSender(config);
+                return new HttpSender(config);
+            case STATIC:
+                return new HttpSender(config, HttpRequestBuilder.AUTH_HTTP_REQUEST_BUILDER);
+            case OAUTH2:
+                return new OAuth2HttpSender(config);
             default:
                 throw new ConnectException("Can't create HTTP sender for auth type: " + config.authorizationType());
-        }
-    }
-
-    private static final class NoAuthHttpSender extends HttpSender {
-
-        private NoAuthHttpSender(final HttpSinkConfig config) {
-            super(config);
-        }
-
-    }
-
-    private static final class StaticAuthHttpSender extends HttpSender {
-
-        private StaticAuthHttpSender(final HttpSinkConfig config) {
-            super(config);
-            requestTemplate.header(HEADER_AUTHORIZATION, config.headerAuthorization());
-            if (config.headerContentType() != null) {
-                requestTemplate.header(HEADER_CONTENT_TYPE, config.headerContentType());
-            }
         }
     }
 
