@@ -3,4 +3,5 @@ module io.aiven.kafka.connect.http {
     requires java.net.http;
     requires static kafka.clients;
     requires static connect.api;
+    requires com.fasterxml.jackson.databind;
 }

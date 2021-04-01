@@ -33,7 +33,7 @@ final class HttpSinkConfigValidationTest {
             .filter(x -> x.name().equals("http.authorization.type"))
             .findFirst().get();
         assertIterableEquals(
-            AuthorizationType.names(),
+            AuthorizationType.NAMES,
             v.recommendedValues()
         );
     }

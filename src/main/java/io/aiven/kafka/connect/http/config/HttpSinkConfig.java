@@ -17,6 +17,8 @@
 package io.aiven.kafka.connect.http.config;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +32,17 @@ import org.apache.kafka.connect.errors.ConnectException;
 public class HttpSinkConfig extends AbstractConfig {
     private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
+
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
     private static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
+
+    private static final String OAUTH2_ACCESS_TOKEN_URL_CONFIG = "oauth2.access.token.url";
+    private static final String OAUTH2_CLIENT_ID_CONFIG = "oauth2.client.id";
+    private static final String OAUTH2_CLIENT_SECRET_CONFIG = "oauth2.client.secret";
+    private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
+    private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
+    private static final String OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG = "oauth2.response.token.property";
 
     private static final String BATCHING_GROUP = "Batching";
     private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
@@ -58,27 +68,7 @@ public class HttpSinkConfig extends AbstractConfig {
             HTTP_URL_CONFIG,
             ConfigDef.Type.STRING,
             ConfigDef.NO_DEFAULT_VALUE,
-            new ConfigDef.Validator() {
-                @Override
-                public void ensureValid(final String name, final Object value) {
-                    if (value == null) {
-                        throw new ConfigException(HTTP_URL_CONFIG, value, "can't be null");
-                    }
-                    if (!(value instanceof String)) {
-                        throw new ConfigException(HTTP_URL_CONFIG, value, "must be string");
-                    }
-                    try {
-                        new URL((String) value);
-                    } catch (final MalformedURLException e) {
-                        throw new ConfigException(HTTP_URL_CONFIG, value, "malformed URL");
-                    }
-                }
-
-                @Override
-                public String toString() {
-                    return "HTTP(S) ULRs";
-                }
-            },
+            new UrlValidator(),
             ConfigDef.Importance.HIGH,
             "The URL to send data to.",
             CONNECTION_GROUP,
@@ -90,7 +80,7 @@ public class HttpSinkConfig extends AbstractConfig {
         configDef.define(
             HTTP_AUTHORIZATION_TYPE_CONFIG,
             ConfigDef.Type.STRING,
-            AuthorizationType.NONE.name,
+            ConfigDef.NO_DEFAULT_VALUE,
             new ConfigDef.Validator() {
                 @Override
                 public void ensureValid(final String name, final Object value) {
@@ -99,16 +89,16 @@ public class HttpSinkConfig extends AbstractConfig {
                     }
                     assert value instanceof String;
                     final String valueStr = (String) value;
-                    if (!AuthorizationType.names().contains(valueStr)) {
+                    if (!AuthorizationType.NAMES.contains(valueStr)) {
                         throw new ConfigException(
                             HTTP_AUTHORIZATION_TYPE_CONFIG, valueStr,
-                            "supported values are: " + AuthorizationType.names());
+                            "supported values are: " + AuthorizationType.NAMES);
                     }
                 }
 
                 @Override
                 public String toString() {
-                    return AuthorizationType.names().toString();
+                    return AuthorizationType.NAMES.toString();
                 }
             },
             ConfigDef.Importance.HIGH,
@@ -118,7 +108,7 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Width.SHORT,
             HTTP_AUTHORIZATION_TYPE_CONFIG,
             List.of(HTTP_HEADERS_AUTHORIZATION_CONFIG),
-            FixedSetRecommender.ofSupportedValues(AuthorizationType.names())
+            FixedSetRecommender.ofSupportedValues(AuthorizationType.NAMES)
         );
 
         configDef.define(
@@ -155,6 +145,100 @@ public class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.MEDIUM,
             HTTP_HEADERS_CONTENT_TYPE_CONFIG
+        );
+
+        configDef.define(
+                OAUTH2_ACCESS_TOKEN_URL_CONFIG,
+                ConfigDef.Type.STRING,
+                null,
+                new UrlValidator(true),
+                ConfigDef.Importance.HIGH,
+                "The URL to be used for fetching access token. "
+                        + "Client Credentials is only supported grand type.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_ACCESS_TOKEN_URL_CONFIG
+        );
+        configDef.define(
+                OAUTH2_CLIENT_ID_CONFIG,
+                ConfigDef.Type.STRING,
+                null,
+                new ConfigDef.NonEmptyStringWithoutControlChars(),
+                ConfigDef.Importance.HIGH,
+                "The client id used for fetching access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_CLIENT_SECRET_CONFIG
+        );
+        configDef.define(
+                OAUTH2_CLIENT_SECRET_CONFIG,
+                ConfigDef.Type.PASSWORD,
+                null,
+                ConfigDef.Importance.HIGH,
+                "The secret used for fetching access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_CLIENT_SECRET_CONFIG
+        );
+        configDef.define(
+                OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
+                ConfigDef.Type.STRING,
+                OAuth2AuthorizationMode.HEADER.name(),
+                new ConfigDef.Validator() {
+                    @Override
+                    public void ensureValid(final String name, final Object value) {
+                        if (value == null) {
+                            throw new ConfigException(name, null, "can't be null");
+                        }
+                        if (!(value instanceof String)) {
+                            throw new ConfigException(name, value, "must be string");
+                        }
+                        if (!OAuth2AuthorizationMode.OAUTH2_AUTHORIZATION_MODES
+                                .contains(value.toString().toUpperCase())) {
+                            throw new ConfigException(
+                                    OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, value,
+                                    "supported values are: " + OAuth2AuthorizationMode.OAUTH2_AUTHORIZATION_MODES);
+                        }
+                    }
+                },
+                ConfigDef.Importance.MEDIUM,
+                "Specifies how to encode client_id and client_secret in the OAuth2 authorization request. "
+                        + "If set to 'header', the credentials are encoded as an "
+                        + "'Authorization: Basic <base-64 encoded client_id:client_secret>' HTTP header. "
+                        + "If set to ‘url’, then client_id and client_secret are sent as URL encoded parameters. "
+                        + "Default is 'header'",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG
+        );
+        configDef.define(
+                OAUTH2_CLIENT_SCOPE_CONFIG,
+                ConfigDef.Type.STRING,
+                null,
+                new ConfigDef.NonEmptyStringWithoutControlChars(),
+                ConfigDef.Importance.LOW,
+                "The scope used for fetching access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_CLIENT_SCOPE_CONFIG
+        );
+        configDef.define(
+                OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG,
+                ConfigDef.Type.STRING,
+                "access_token",
+                new ConfigDef.NonEmptyStringWithoutControlChars(),
+                ConfigDef.Importance.LOW,
+                "The name of the JSON property containing the access token returned by the OAuth2 provider. "
+                        + "Default value is 'access_token'.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG
         );
     }
 
@@ -230,7 +314,28 @@ public class HttpSinkConfig extends AbstractConfig {
                             + " = " + AuthorizationType.STATIC);
                 }
                 break;
-
+            case OAUTH2:
+                if (oauth2AccessTokenUri() == null) {
+                    throw new ConfigException(
+                            OAUTH2_ACCESS_TOKEN_URL_CONFIG, getString(OAUTH2_ACCESS_TOKEN_URL_CONFIG),
+                            "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
+                                    + " = " + AuthorizationType.OAUTH2);
+                }
+                if (oauth2ClientId() == null || oauth2ClientId().isEmpty()) {
+                    throw new ConfigException(
+                            OAUTH2_CLIENT_ID_CONFIG,
+                            getString(OAUTH2_CLIENT_ID_CONFIG),
+                            "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
+                                    + " = " + AuthorizationType.OAUTH2);
+                }
+                if (oauth2ClientSecret() == null || oauth2ClientSecret().value().isEmpty()) {
+                    throw new ConfigException(
+                            OAUTH2_CLIENT_SECRET_CONFIG,
+                            getPassword(OAUTH2_CLIENT_SECRET_CONFIG),
+                            "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
+                                    + " = " + AuthorizationType.OAUTH2);
+                }
+                break;
             case NONE:
                 if (headerAuthorization() != null && !headerAuthorization().isBlank()) {
                     throw new ConfigException(
@@ -246,12 +351,8 @@ public class HttpSinkConfig extends AbstractConfig {
         }
     }
 
-    public final URL httpUrl() {
-        try {
-            return new URL(getString(HTTP_URL_CONFIG));
-        } catch (final MalformedURLException e) {
-            throw new ConnectException(e);
-        }
+    public final URI httpUri() {
+        return toURI(HTTP_URL_CONFIG);
     }
 
     public AuthorizationType authorizationType() {
@@ -287,6 +388,38 @@ public class HttpSinkConfig extends AbstractConfig {
         return originalsStrings().get(NAME_CONFIG);
     }
 
+    public final URI oauth2AccessTokenUri() {
+        return getString(OAUTH2_ACCESS_TOKEN_URL_CONFIG) != null ? toURI(OAUTH2_ACCESS_TOKEN_URL_CONFIG) : null;
+    }
+
+    private URI toURI(final String propertyName) {
+        try {
+            return new URL(getString(propertyName)).toURI();
+        } catch (final MalformedURLException | URISyntaxException e) {
+            throw new ConnectException(e);
+        }
+    }
+
+    public final String oauth2ClientId() {
+        return getString(OAUTH2_CLIENT_ID_CONFIG);
+    }
+
+    public final Password oauth2ClientSecret() {
+        return getPassword(OAUTH2_CLIENT_SECRET_CONFIG);
+    }
+
+    public final OAuth2AuthorizationMode oauth2AuthorizationMode() {
+        return OAuth2AuthorizationMode.valueOf(getString(OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG).toUpperCase());
+    }
+
+    public final String oauth2ClientScope() {
+        return getString(OAUTH2_CLIENT_SCOPE_CONFIG);
+    }
+
+    public final String oauth2ResponseTokenProperty() {
+        return getString(OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG);
+    }
+
     public static void main(final String... args) {
         System.out.println("=========================================");
         System.out.println("HTTP Sink connector Configuration Options");
@@ -294,4 +427,5 @@ public class HttpSinkConfig extends AbstractConfig {
         System.out.println();
         System.out.println(configDef().toEnrichedRst());
     }
+
 }
