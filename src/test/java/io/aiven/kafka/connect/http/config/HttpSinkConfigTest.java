@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.config.ConfigException;
 
@@ -65,6 +66,7 @@ final class HttpSinkConfigTest {
         assertNull(config.oauth2ClientScope());
         assertEquals(OAuth2AuthorizationMode.HEADER, config.oauth2AuthorizationMode());
         assertEquals("access_token", config.oauth2ResponseTokenProperty());
+        assertNull(config.kafkaRetryBackoffMs());
     }
 
     @Test
@@ -390,6 +392,38 @@ final class HttpSinkConfigTest {
     }
 
     @Test
+    void tooBigKafkaRetryBackoffMs() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "kafka.retry.backoff.ms", String.valueOf(TimeUnit.HOURS.toMillis(25))
+        );
+
+        final Throwable t = assertThrows(
+                ConfigException.class, () -> new HttpSinkConfig(properties)
+        );
+        assertEquals("Invalid value 90000000 for configuration kafka.retry.backoff.ms: "
+                        + "Value must be no more than 86400000 (24 hours)",
+                t.getMessage());
+    }
+
+
+    @Test
+    void negativeKafkaRetryBackoffMs() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "kafka.retry.backoff.ms", "-1"
+        );
+
+        final Throwable t = assertThrows(
+                ConfigException.class, () -> new HttpSinkConfig(properties)
+        );
+        assertEquals("Invalid value -1 for configuration kafka.retry.backoff.ms: Value must be at least 0",
+                t.getMessage());
+    }
+
+    @Test
     void correctRetryBackoffMs() {
         final Map<String, String> properties = Map.of(
                 "http.url", "http://localhost:8090",
@@ -400,4 +434,17 @@ final class HttpSinkConfigTest {
         final HttpSinkConfig config = new HttpSinkConfig(properties);
         assertEquals(12345, config.retryBackoffMs());
     }
+
+    @Test
+    void customKafkaRetryBackoffMs() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "kafka.retry.backoff.ms", "6000"
+        );
+
+        final var config = new HttpSinkConfig(properties);
+        assertEquals(6000, config.kafkaRetryBackoffMs());
+    }
+
 }
