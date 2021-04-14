@@ -170,7 +170,7 @@ public class HttpSinkConfig extends AbstractConfig {
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.LONG,
-                OAUTH2_CLIENT_SECRET_CONFIG
+                OAUTH2_CLIENT_ID_CONFIG
         );
         configDef.define(
                 OAUTH2_CLIENT_SECRET_CONFIG,
