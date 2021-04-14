@@ -54,6 +54,9 @@ public final class HttpSinkTask extends SinkTask {
             this.httpSender = HttpSender.createHttpSender(config);
         }
         recordSender = RecordSender.createRecordSender(httpSender, config);
+        if (Objects.nonNull(config.kafkaRetryBackoffMs())) {
+            context.timeout(config.kafkaRetryBackoffMs());
+        }
     }
 
     @Override

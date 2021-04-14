@@ -22,6 +22,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -36,6 +38,8 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
     private static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
+
+    public static final String KAFKA_RETRY_BACKOFF_MS_CONFIG = "kafka.retry.backoff.ms";
 
     private static final String OAUTH2_ACCESS_TOKEN_URL_CONFIG = "oauth2.access.token.url";
     private static final String OAUTH2_CLIENT_ID_CONFIG = "oauth2.client.id";
@@ -273,6 +277,39 @@ public class HttpSinkConfig extends AbstractConfig {
     private static void addRetriesConfigGroup(final ConfigDef configDef) {
         int groupCounter = 0;
         configDef.define(
+                KAFKA_RETRY_BACKOFF_MS_CONFIG,
+                ConfigDef.Type.LONG,
+                null,
+                new ConfigDef.Validator() {
+
+                    static final long MAXIMUM_BACKOFF_POLICY = 86400000; // 24 hours
+
+                    @Override
+                    public void ensureValid(final String name, final Object value) {
+                        if (Objects.isNull(value)) {
+                            return;
+                        }
+                        assert value instanceof Long;
+                        final var longValue = (Long) value;
+                        if (longValue < 0) {
+                            throw new ConfigException(name, value, "Value must be at least 0");
+                        } else if (longValue > MAXIMUM_BACKOFF_POLICY) {
+                            throw new ConfigException(name, value,
+                                    "Value must be no more than " + MAXIMUM_BACKOFF_POLICY + " (24 hours)");
+                        }
+                    }
+                },
+                ConfigDef.Importance.MEDIUM,
+                "The retry backoff in milliseconds. "
+                        + "This config is used to notify Kafka Connect to retry delivering a message batch or "
+                        + "performing recovery in case of transient exceptions. Maximum value is "
+                        + TimeUnit.HOURS.toMillis(24) + " (24 hours).",
+                DELIVERY_GROUP,
+                groupCounter++,
+                ConfigDef.Width.NONE,
+                KAFKA_RETRY_BACKOFF_MS_CONFIG
+        );
+        configDef.define(
             MAX_RETRIES_CONFIG,
             ConfigDef.Type.INT,
             1,
@@ -353,6 +390,10 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final URI httpUri() {
         return toURI(HTTP_URL_CONFIG);
+    }
+
+    public final Long kafkaRetryBackoffMs() {
+        return getLong(KAFKA_RETRY_BACKOFF_MS_CONFIG);
     }
 
     public AuthorizationType authorizationType() {
