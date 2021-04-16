@@ -23,7 +23,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -157,35 +156,49 @@ public class HttpSinkConfig extends AbstractConfig {
                 null,
                 new UrlValidator(true),
                 ConfigDef.Importance.HIGH,
-                "The URL to be used for fetching access token. "
-                        + "Client Credentials is only supported grand type.",
+                "The URL to be used for fetching an access token. "
+                        + "Client Credentials is the only supported grant type.",
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.LONG,
-                OAUTH2_ACCESS_TOKEN_URL_CONFIG
+                OAUTH2_ACCESS_TOKEN_URL_CONFIG,
+                List.of(OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG,
+                        OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_ID_CONFIG,
                 ConfigDef.Type.STRING,
                 null,
-                new ConfigDef.NonEmptyStringWithoutControlChars(),
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 client id";
+                    }
+                },
                 ConfigDef.Importance.HIGH,
-                "The client id used for fetching access token.",
+                "The client id used for fetching an access token.",
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.LONG,
-                OAUTH2_CLIENT_ID_CONFIG
+                OAUTH2_CLIENT_ID_CONFIG,
+                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
+                        OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_SECRET_CONFIG,
                 ConfigDef.Type.PASSWORD,
                 null,
                 ConfigDef.Importance.HIGH,
-                "The secret used for fetching access token.",
+                "The secret used for fetching an access token.",
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.LONG,
-                OAUTH2_CLIENT_SECRET_CONFIG
+                OAUTH2_CLIENT_SECRET_CONFIG,
+                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
+                        OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
@@ -207,42 +220,63 @@ public class HttpSinkConfig extends AbstractConfig {
                                     "supported values are: " + OAuth2AuthorizationMode.OAUTH2_AUTHORIZATION_MODES);
                         }
                     }
+
+                    @Override
+                    public String toString() {
+                        return String.join(",", OAuth2AuthorizationMode.OAUTH2_AUTHORIZATION_MODES);
+                    }
                 },
                 ConfigDef.Importance.MEDIUM,
-                "Specifies how to encode client_id and client_secret in the OAuth2 authorization request. "
-                        + "If set to 'header', the credentials are encoded as an "
-                        + "'Authorization: Basic <base-64 encoded client_id:client_secret>' HTTP header. "
-                        + "If set to ‘url’, then client_id and client_secret are sent as URL encoded parameters. "
-                        + "Default is 'header'",
+                "Specifies how to encode ``client_id`` and ``client_secret`` in the OAuth2 authorization request. "
+                        + "If set to ``header``, the credentials are encoded as an "
+                        + "``Authorization: Basic <base-64 encoded client_id:client_secret>`` HTTP header. "
+                        + "If set to ``url``, then ``client_id`` and ``client_secret`` "
+                        + "are sent as URL encoded parameters. Default is ``header``.",
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.LONG,
-                OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG
+                OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
+                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                        OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_SCOPE_CONFIG,
                 ConfigDef.Type.STRING,
                 null,
-                new ConfigDef.NonEmptyStringWithoutControlChars(),
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 client scope";
+                    }
+                },
                 ConfigDef.Importance.LOW,
-                "The scope used for fetching access token.",
+                "The scope used for fetching an access token.",
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.LONG,
-                OAUTH2_CLIENT_SCOPE_CONFIG
+                OAUTH2_CLIENT_SCOPE_CONFIG,
+                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
                 OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG,
                 ConfigDef.Type.STRING,
                 "access_token",
-                new ConfigDef.NonEmptyStringWithoutControlChars(),
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 response token";
+                    }
+                },
                 ConfigDef.Importance.LOW,
-                "The name of the JSON property containing the access token returned by the OAuth2 provider. "
-                        + "Default value is 'access_token'.",
+                "The name of the JSON property containing the access token returned "
+                        + "by the OAuth2 provider. Default value is ``access_token``.",
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.LONG,
-                OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG
+                OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG,
+                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG)
         );
     }
 
@@ -298,12 +332,16 @@ public class HttpSinkConfig extends AbstractConfig {
                                     "Value must be no more than " + MAXIMUM_BACKOFF_POLICY + " (24 hours)");
                         }
                     }
+
+                    @Override
+                    public String toString() {
+                        return String.join(",", List.of("null", "[0, " + MAXIMUM_BACKOFF_POLICY + "]"));
+                    }
                 },
                 ConfigDef.Importance.MEDIUM,
                 "The retry backoff in milliseconds. "
                         + "This config is used to notify Kafka Connect to retry delivering a message batch or "
-                        + "performing recovery in case of transient exceptions. Maximum value is "
-                        + TimeUnit.HOURS.toMillis(24) + " (24 hours).",
+                        + "performing recovery in case of transient failures.",
                 DELIVERY_GROUP,
                 groupCounter++,
                 ConfigDef.Width.NONE,

@@ -52,4 +52,9 @@ class UrlValidator implements ConfigDef.Validator {
         }
     }
 
+    @Override
+    public String toString() {
+        return "HTTP(S) URL";
+    }
+
 }

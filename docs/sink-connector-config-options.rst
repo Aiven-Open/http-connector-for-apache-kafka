@@ -9,14 +9,14 @@ Connection
   The URL to send data to.
 
   * Type: string
-  * Valid Values: HTTP(S) ULRs
+  * Valid Values: HTTP(S) URL
   * Importance: high
 
 ``http.authorization.type``
   The HTTP authorization type.
 
   * Type: string
-  * Valid Values: [none, static]
+  * Valid Values: [none, oauth2, static]
   * Importance: high
   * Dependents: ``http.headers.authorization``
 
@@ -33,6 +33,59 @@ Connection
   * Type: string
   * Default: null
   * Importance: low
+
+``oauth2.access.token.url``
+  The URL to be used for fetching an access token. Client Credentials is the only supported grant type.
+
+  * Type: string
+  * Default: null
+  * Valid Values: HTTP(S) URL
+  * Importance: high
+  * Dependents: ``oauth2.client.id``, ``oauth2.client.secret``, ``oauth2.client.authorization.mode``, ``oauth2.client.scope``, ``oauth2.response.token.property``
+
+``oauth2.client.id``
+  The client id used for fetching an access token.
+
+  * Type: string
+  * Default: null
+  * Valid Values: OAuth2 client id
+  * Importance: high
+  * Dependents: ``oauth2.access.token.url``, ``oauth2.client.secret``, ``oauth2.client.authorization.mode``, ``oauth2.client.scope``, ``oauth2.response.token.property``
+
+``oauth2.client.secret``
+  The secret used for fetching an access token.
+
+  * Type: password
+  * Default: null
+  * Importance: high
+  * Dependents: ``oauth2.access.token.url``, ``oauth2.client.id``, ``oauth2.client.authorization.mode``, ``oauth2.client.scope``, ``oauth2.response.token.property``
+
+``oauth2.client.authorization.mode``
+  Specifies how to encode ``client_id`` and ``client_secret`` in the OAuth2 authorization request. If set to ``header``, the credentials are encoded as an ``Authorization: Basic <base-64 encoded client_id:client_secret>`` HTTP header. If set to ``url``, then ``client_id`` and ``client_secret`` are sent as URL encoded parameters. Default is ``header``.
+
+  * Type: string
+  * Default: HEADER
+  * Valid Values: HEADER,URL
+  * Importance: medium
+  * Dependents: ``oauth2.access.token.url``, ``oauth2.client.id``, ``oauth2.client.secret``, ``oauth2.client.scope``, ``oauth2.response.token.property``
+
+``oauth2.client.scope``
+  The scope used for fetching an access token.
+
+  * Type: string
+  * Default: null
+  * Valid Values: OAuth2 client scope
+  * Importance: low
+  * Dependents: ``oauth2.access.token.url``, ``oauth2.client.id``, ``oauth2.client.secret``, ``oauth2.client.authorization.mode``, ``oauth2.response.token.property``
+
+``oauth2.response.token.property``
+  The name of the JSON property containing the access token returned by the OAuth2 provider. Default value is ``access_token``.
+
+  * Type: string
+  * Default: access_token
+  * Valid Values: OAuth2 response token
+  * Importance: low
+  * Dependents: ``oauth2.access.token.url``, ``oauth2.client.id``, ``oauth2.client.secret``, ``oauth2.client.authorization.mode``, ``oauth2.client.scope``
 
 Batching
 ^^^^^^^^
@@ -54,6 +107,14 @@ Batching
 
 Delivery
 ^^^^^^^^
+
+``kafka.retry.backoff.ms``
+  The retry backoff in milliseconds. This config is used to notify Kafka Connect to retry delivering a message batch or performing recovery in case of transient failures.
+
+  * Type: long
+  * Default: null
+  * Valid Values: null,[0, 86400000]
+  * Importance: medium
 
 ``max.retries``
   The maximum number of times to retry on errors when sending a batch before failing the task.
