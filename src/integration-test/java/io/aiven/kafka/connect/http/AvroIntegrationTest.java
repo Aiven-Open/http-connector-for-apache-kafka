@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -81,6 +82,7 @@ public class AvroIntegrationTest {
 
     @Container
     private final KafkaContainer kafka = new KafkaContainer()
+            .withNetwork(Network.newNetwork())
             .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
 
     @Container
