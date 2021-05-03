@@ -42,7 +42,7 @@ ext {
     moduleName = 'io.aiven.kafka.connect.http'
 
     kafkaVersion = '2.0.1'
-    testcontainersVersion = '1.14.3'
+    testcontainersVersion = '1.15.3'
     confluentPlatformVersion = "4.1.4"
 }
 
