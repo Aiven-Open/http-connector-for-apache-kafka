@@ -1,4 +1,4 @@
-# Aiven Kafka HTTP Connector
+# Kafka HTTP Connector
 
 [![Build Status](https://travis-ci.org/aiven/aiven-kafka-connect-http.svg?branch=master)](https://travis-ci.org/aiven/aiven-kafka-connect-http)
 
