@@ -1,6 +1,4 @@
-# Kafka HTTP Connector
-
-[![Build Status](https://travis-ci.org/aiven/aiven-kafka-connect-http.svg?branch=master)](https://travis-ci.org/aiven/aiven-kafka-connect-http)
+# Aiven's HTTP Sink Connector for Apache Kafka
 
 ![HTTP logo](docs/IETF-Badge-HTTP.png)
 

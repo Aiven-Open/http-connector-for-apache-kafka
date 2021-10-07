@@ -97,14 +97,14 @@ public class AvroIntegrationTest {
 
     @BeforeAll
     static void setUpAll() throws IOException, InterruptedException {
-        final File testDir = Files.createTempDirectory("aiven-kafka-connect-transforms-http-").toFile();
+        final File testDir = Files.createTempDirectory("http-connector-for-apache-kafka-").toFile();
         testDir.deleteOnExit();
 
         pluginsDir = new File(testDir, "plugins/");
         assert pluginsDir.mkdirs();
 
         // Unpack the library distribution.
-        final File transformDir = new File(pluginsDir, "aiven-kafka-connect-http/");
+        final File transformDir = new File(pluginsDir, "http-connector-for-apache-kafka/");
         assert transformDir.mkdirs();
         final File distFile = new File(System.getProperty("integration-test.distribution.file.path"));
         assert distFile.exists();

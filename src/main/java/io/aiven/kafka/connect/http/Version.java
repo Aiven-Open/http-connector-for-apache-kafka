@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 class Version {
     private static final Logger log = LoggerFactory.getLogger(Version.class);
 
-    private static final String PROPERTIES_FILENAME = "aiven-kafka-connect-http-version.properties";
+    private static final String PROPERTIES_FILENAME = "http-connector-for-apache-kafka-version.properties";
 
     static final String VERSION;
 

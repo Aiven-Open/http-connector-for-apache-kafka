@@ -147,7 +147,7 @@ test {
 }
 
 processResources {
-    filesMatching('aiven-kafka-connect-http-version.properties') {
+    filesMatching('http-connector-for-apache-kafka-version.properties') {
         expand(version: version)
     }
 }
