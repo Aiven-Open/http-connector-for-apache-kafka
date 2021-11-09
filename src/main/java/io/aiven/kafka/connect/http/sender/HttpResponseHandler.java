@@ -30,14 +30,13 @@ interface HttpResponseHandler {
 
     HttpResponseHandler ON_HTTP_ERROR_RESPONSE_HANDLER = response -> {
         if (response.statusCode() >= 400) {
-            if (response.statusCode() < 200 || response.statusCode() > 299) {
-                final var request = response.request();
-                LOGGER.warn(
-                        "Got unexpected HTTP status code: {} and body: {}. Requested URI: {}",
-                        response.statusCode(),
-                        response.body(),
-                        request != null ? request.uri() : "UNKNOWN");
-            }
+            final var request = response.request();
+            final var uri = request != null ? request.uri() : "UNKNOWN";
+            LOGGER.warn(
+                    "Got unexpected HTTP status code: {} and body: {}. Requested URI: {}",
+                    response.statusCode(),
+                    response.body(),
+                    uri);
             throw new IOException("Server replied with status code " + response.statusCode()
                     + " and body " + response.body());
         }
