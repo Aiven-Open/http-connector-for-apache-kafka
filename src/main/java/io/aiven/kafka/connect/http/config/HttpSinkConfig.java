@@ -20,9 +20,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -37,6 +39,8 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
     private static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
+    private static final String HTTP_HEADERS_ADDITIONAL = "http.headers.additional";
+    private static final String HTTP_HEADERS_ADDITIONAL_DELIMITER = ":";
 
     public static final String KAFKA_RETRY_BACKOFF_MS_CONFIG = "kafka.retry.backoff.ms";
 
@@ -148,6 +152,18 @@ public class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.MEDIUM,
             HTTP_HEADERS_CONTENT_TYPE_CONFIG
+        );
+
+        configDef.define(
+                HTTP_HEADERS_ADDITIONAL,
+                ConfigDef.Type.LIST,
+                Collections.EMPTY_LIST,
+                ConfigDef.Importance.LOW,
+                "Additional headers to forward in the http request in the format header:value separated by a comma",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.MEDIUM,
+                HTTP_HEADERS_ADDITIONAL
         );
 
         configDef.define(
@@ -432,6 +448,13 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final Long kafkaRetryBackoffMs() {
         return getLong(KAFKA_RETRY_BACKOFF_MS_CONFIG);
+    }
+
+    public Map<String, String> getAdditionalHeaders() {
+        return getList(HTTP_HEADERS_ADDITIONAL).stream()
+                .map(s -> s.split(HTTP_HEADERS_ADDITIONAL_DELIMITER))
+                .filter(h -> h.length > 1)
+                .collect(Collectors.toMap(h -> h[0], h -> h[1]));
     }
 
     public AuthorizationType authorizationType() {

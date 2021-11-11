@@ -34,6 +34,13 @@ Connection
   * Default: null
   * Importance: low
 
+``http.headers.additional``
+  Additional headers to forward in the http request in the format header:value separated by a comma
+
+  * Type: list
+  * Default: ""
+  * Importance: low
+
 ``oauth2.access.token.url``
   The URL to be used for fetching an access token. Client Credentials is the only supported grant type.
 

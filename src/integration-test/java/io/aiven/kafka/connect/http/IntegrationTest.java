@@ -27,6 +27,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -38,6 +39,7 @@ import org.apache.kafka.connect.runtime.TaskStatus;
 import org.apache.kafka.connect.runtime.rest.entities.ConnectorStateInfo;
 
 import io.aiven.kafka.connect.http.mockserver.BodyRecorderHandler;
+import io.aiven.kafka.connect.http.mockserver.HeaderRecorderHandler;
 import io.aiven.kafka.connect.http.mockserver.MockServer;
 import io.aiven.kafka.connect.http.mockserver.RequestFailingHandler;
 
@@ -52,7 +54,9 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testcontainers
 final class IntegrationTest {
@@ -172,6 +176,48 @@ final class IntegrationTest {
         log.info("{} HTTP requests were expected, {} were successfully delivered",
             expectedBodies.size(),
             bodyRecorderHandler.recorderBodies().size());
+    }
+
+    @Test
+    @Timeout(30)
+    final void testAdditionalHeaders() throws ExecutionException, InterruptedException {
+        final HeaderRecorderHandler headerRecorderHandler = new HeaderRecorderHandler();
+        mockServer.addHandler(headerRecorderHandler);
+        mockServer.start();
+
+        final Map<String, String> config = basicConnectorConfig();
+        config.put("http.headers.additional", "test:value,test2:value2,test3:value3");
+        connectRunner.createConnector(config);
+
+        final Map<String, String> expectedHeaders = new HashMap<>();
+        expectedHeaders.put("test", "value");
+        expectedHeaders.put("test2", "value2");
+        expectedHeaders.put("test3", "value3");
+        final List<Future<RecordMetadata>> sendFutures = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            for (int partition = 0; partition < TEST_TOPIC_PARTITIONS; partition++) {
+                final String key = "key-" + i;
+                final String value = "value-" + i;
+                sendFutures.add(sendMessageAsync(TEST_TOPIC, partition, key, value));
+            }
+        }
+        producer.flush();
+        for (final Future<RecordMetadata> sendFuture : sendFutures) {
+            sendFuture.get();
+        }
+
+        TestUtils.waitForCondition(
+            () -> headerRecorderHandler.recorderHeaders().size() >= 1000,
+            15000,
+            "All requests received by HTTP server"
+        );
+        log.info("Recorded request header fields: {}", headerRecorderHandler.recorderHeaders());
+        headerRecorderHandler.recorderHeaders().forEach(headers -> {
+            expectedHeaders.forEach((key, value) -> {
+                assertTrue(headers.containsKey(key));
+                assertEquals(value, headers.get(key));
+            });
+        });
     }
 
     @Test

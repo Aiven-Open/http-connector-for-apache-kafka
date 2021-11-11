@@ -31,8 +31,12 @@ interface HttpRequestBuilder {
 
     HttpRequest.Builder build(final HttpSinkConfig config);
 
-    HttpRequestBuilder DEFAULT_HTTP_REQUEST_BUILDER = config ->
-            HttpRequest.newBuilder(config.httpUri()).timeout(REQUEST_HTTP_TIMEOUT);
+    HttpRequestBuilder DEFAULT_HTTP_REQUEST_BUILDER = config -> {
+        final var httpRequest = HttpRequest.newBuilder(config.httpUri()).timeout(REQUEST_HTTP_TIMEOUT);
+        config.getAdditionalHeaders().forEach(httpRequest::header);
+        return httpRequest;
+    };
+
 
     HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = config -> {
         final var requestBuilder =
