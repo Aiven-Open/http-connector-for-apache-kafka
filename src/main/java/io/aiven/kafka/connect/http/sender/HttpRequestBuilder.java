@@ -27,8 +27,6 @@ interface HttpRequestBuilder {
 
     String HEADER_CONTENT_TYPE = "Content-Type";
 
-    //Duration REQUEST_HTTP_TIMEOUT = Duration.ofSeconds(30);
-
     HttpRequest.Builder build(final HttpSinkConfig config);
 
     HttpRequestBuilder DEFAULT_HTTP_REQUEST_BUILDER = config ->
