@@ -19,6 +19,7 @@ package io.aiven.kafka.connect.http.sender;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -38,7 +39,7 @@ class AccessTokenHttpRequestBuilder implements HttpRequestBuilder {
         Objects.requireNonNull(config.oauth2AccessTokenUri(), "oauth2AccessTokenUri");
         final var accessTokenRequestBuilder = HttpRequest
                         .newBuilder(config.oauth2AccessTokenUri())
-                        .timeout(REQUEST_HTTP_TIMEOUT)
+                        .timeout(Duration.ofSeconds(config.httpTimeout()))
                         .header(HEADER_CONTENT_TYPE, "application/x-www-form-urlencoded");
 
         final var accessTokenRequestBodyBuilder = new StringJoiner("&");
