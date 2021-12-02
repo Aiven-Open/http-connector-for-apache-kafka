@@ -27,16 +27,14 @@ interface HttpRequestBuilder {
 
     String HEADER_CONTENT_TYPE = "Content-Type";
 
-    Duration REQUEST_HTTP_TIMEOUT = Duration.ofSeconds(30);
-
     HttpRequest.Builder build(final HttpSinkConfig config);
 
     HttpRequestBuilder DEFAULT_HTTP_REQUEST_BUILDER = config -> {
-        final var httpRequest = HttpRequest.newBuilder(config.httpUri()).timeout(REQUEST_HTTP_TIMEOUT);
+        final var httpRequest = HttpRequest.newBuilder(config.httpUri())
+                .timeout(Duration.ofSeconds(config.httpTimeout()));
         config.getAdditionalHeaders().forEach(httpRequest::header);
         return httpRequest;
     };
-
 
     HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = config -> {
         final var requestBuilder =

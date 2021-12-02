@@ -18,6 +18,7 @@ package io.aiven.kafka.connect.http.sender;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -33,23 +34,25 @@ class AccessTokenHttpRequestBuilderTest {
 
     @Test
     void shouldBuildDefaultAccessTokenRequest() throws Exception {
-        final var config = Map.of(
+        final var configBase = Map.of(
                 "http.url", "http://localhost:42",
                 "http.authorization.type", "oauth2",
                 "oauth2.access.token.url", "http://localhost:42/token",
                 "oauth2.client.id", "some_client_id",
                 "oauth2.client.secret", "some_client_secret"
         );
+        final HttpSinkConfig config = new HttpSinkConfig(configBase);
         final var accessTokenRequest =
-                new AccessTokenHttpRequestBuilder().build(new HttpSinkConfig(config)).build();
+                new AccessTokenHttpRequestBuilder().build(config).build();
 
         assertEquals(new URL("http://localhost:42/token").toURI(), accessTokenRequest.uri());
 
         final var expectedAuthHeader = "Basic "
                 + Base64.getEncoder()
                     .encodeToString("some_client_id:some_client_secret".getBytes(StandardCharsets.UTF_8));
+
         assertEquals(
-                Optional.of(AccessTokenHttpRequestBuilder.REQUEST_HTTP_TIMEOUT),
+                Optional.of(Duration.ofSeconds(config.httpTimeout())),
                 accessTokenRequest.timeout());
         assertEquals("POST",
                 accessTokenRequest.method());
@@ -62,7 +65,7 @@ class AccessTokenHttpRequestBuilderTest {
 
     @Test
     void shouldBuildCustomisedAccessTokenRequest() throws Exception {
-        final var config = Map.of(
+        final var configBase = Map.of(
                 "http.url", "http://localhost:42",
                 "http.authorization.type", "oauth2",
                 "oauth2.access.token.url", "http://localhost:42/token",
@@ -71,13 +74,14 @@ class AccessTokenHttpRequestBuilderTest {
                 "oauth2.client.authorization.mode", "url",
                 "oauth2.client.scope", "scope1,scope2"
         );
+        final HttpSinkConfig config = new HttpSinkConfig(configBase);
         final var accessTokenRequest =
-                new AccessTokenHttpRequestBuilder().build(new HttpSinkConfig(config)).build();
+                new AccessTokenHttpRequestBuilder().build(config).build();
 
         assertEquals(new URL("http://localhost:42/token").toURI(), accessTokenRequest.uri());
 
         assertEquals(
-                Optional.of(AccessTokenHttpRequestBuilder.REQUEST_HTTP_TIMEOUT),
+                Optional.of(Duration.ofSeconds(config.httpTimeout())),
                 accessTokenRequest.timeout());
         assertEquals("POST",
                 accessTokenRequest.method());

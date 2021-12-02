@@ -59,6 +59,9 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String MAX_RETRIES_CONFIG = "max.retries";
     private static final String RETRY_BACKOFF_MS_CONFIG = "retry.backoff.ms";
 
+    private static final String TIMEOUT_GROUP = "Timeout";
+    private static final String HTTP_TIMEOUT_CONFIG = "http.timeout";
+
     public static final String NAME_CONFIG = "name";
 
     public static ConfigDef configDef() {
@@ -66,6 +69,7 @@ public class HttpSinkConfig extends AbstractConfig {
         addConnectionConfigGroup(configDef);
         addBatchingConfigGroup(configDef);
         addRetriesConfigGroup(configDef);
+        addTimeoutConfigGroup(configDef);
         return configDef;
     }
 
@@ -391,6 +395,22 @@ public class HttpSinkConfig extends AbstractConfig {
         );
     }
 
+    private static void addTimeoutConfigGroup(final ConfigDef configDef) {
+        int groupCounter = 0;
+        configDef.define(
+            HTTP_TIMEOUT_CONFIG,
+            ConfigDef.Type.INT,
+            30,
+            ConfigDef.Range.atLeast(1),
+            ConfigDef.Importance.LOW,
+            "HTTP Response timeout (seconds). Default is 30 seconds.",
+            TIMEOUT_GROUP,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            HTTP_TIMEOUT_CONFIG
+        );
+    }
+
     public HttpSinkConfig(final Map<String, String> properties) {
         super(configDef(), properties);
         validate();
@@ -485,6 +505,10 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public int retryBackoffMs() {
         return getInt(RETRY_BACKOFF_MS_CONFIG);
+    }
+
+    public int httpTimeout() {
+        return getInt(HTTP_TIMEOUT_CONFIG);
     }
 
     public final String connectorName() {

@@ -481,4 +481,26 @@ final class HttpSinkConfigTest {
         assertEquals(6000, config.kafkaRetryBackoffMs());
     }
 
+    @Test
+    void defaultHttpTimeout() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none"
+        );
+
+        final var config = new HttpSinkConfig(properties);
+        assertEquals(30, config.httpTimeout());
+    }
+
+    @Test
+    void customHttpTimeout() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "http.timeout", "5"
+        );
+
+        final var config = new HttpSinkConfig(properties);
+        assertEquals(5, config.httpTimeout());
+    }
 }

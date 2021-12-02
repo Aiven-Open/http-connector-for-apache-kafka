@@ -139,4 +139,10 @@ Delivery
   * Valid Values: [0,...]
   * Importance: medium
 
+``http.timeout``
+  The time in seconds to configure the http request timeout.
 
+  * Type: int
+  * Default: 30
+  * Valid Values: [1,...]
+  * Importance: low
