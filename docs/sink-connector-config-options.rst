@@ -35,10 +35,11 @@ Connection
   * Importance: low
 
 ``http.headers.additional``
-  Additional headers to forward in the http request in the format header:value separated by a comma
+  Additional headers to forward in the http request in the format header:value separated by a comma, headers are case-insensitive and no duplicate headers are allowed.
 
   * Type: list
   * Default: ""
+  * Valid Values: Key value pair string list with format header:value
   * Importance: low
 
 ``oauth2.access.token.url``
@@ -139,10 +140,15 @@ Delivery
   * Valid Values: [0,...]
   * Importance: medium
 
+Timeout
+^^^^^^^
+
 ``http.timeout``
-  The time in seconds to configure the http request timeout.
+  HTTP Response timeout (seconds). Default is 30 seconds.
 
   * Type: int
   * Default: 30
   * Valid Values: [1,...]
   * Importance: low
+
+

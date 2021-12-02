@@ -53,6 +53,6 @@ public class KeyValuePairListValidator implements ConfigDef.Validator {
 
     @Override
     public String toString() {
-        return "Key value pair string list validator";
+        return "Key value pair string list with format header:value";
     }
 }
