@@ -16,11 +16,15 @@
 
 package io.aiven.kafka.connect.http.config;
 
+import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.kafka.common.config.ConfigException;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class HttpSinkConfigValidationTest {
     @Test
@@ -35,6 +39,43 @@ final class HttpSinkConfigValidationTest {
         assertIterableEquals(
             AuthorizationType.NAMES,
             v.recommendedValues()
+        );
+    }
+
+    @Test
+    void checkAdditionalHeadersValidation() {
+        final Map<String, String> properties = new HashMap<>(Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "http.headers.additional", "test:value,test:valueUpperCase"
+        ));
+
+        assertThrows(
+            ConfigException.class,
+            () -> new HttpSinkConfig(properties),
+            "Expected config exception due to repeated keys, but it parsed successfully"
+        );
+
+        properties.replace("http.headers.additional", "test:value,wrong,test1:test1");
+
+        assertThrows(
+            ConfigException.class,
+            () -> new HttpSinkConfig(properties),
+            "Expected config exception due to header without value, but it parsed successfully"
+        );
+
+        properties.replace("http.headers.additional", "test:value,TEST:valueUpperCase");
+        assertThrows(
+            ConfigException.class,
+            () -> new HttpSinkConfig(properties),
+            "Expected config exception due to repeated case-insensitive keys, but it parsed successfully"
+        );
+
+        properties.replace("http.headers.additional", "test:value,,test2:test2");
+        assertThrows(
+            ConfigException.class,
+            () -> new HttpSinkConfig(properties),
+            "Expected config exception due to empty value, but it parsed successfully"
         );
     }
 }

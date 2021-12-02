@@ -158,8 +158,10 @@ public class HttpSinkConfig extends AbstractConfig {
                 HTTP_HEADERS_ADDITIONAL,
                 ConfigDef.Type.LIST,
                 Collections.EMPTY_LIST,
+                new KeyValuePairListValidator(HTTP_HEADERS_ADDITIONAL_DELIMITER),
                 ConfigDef.Importance.LOW,
-                "Additional headers to forward in the http request in the format header:value separated by a comma",
+                "Additional headers to forward in the http request in the format header:value separated by a comma, "
+                        + "headers are case-insensitive and no duplicate headers are allowed.",
                 CONNECTION_GROUP,
                 groupCounter++,
                 ConfigDef.Width.MEDIUM,
@@ -453,7 +455,6 @@ public class HttpSinkConfig extends AbstractConfig {
     public Map<String, String> getAdditionalHeaders() {
         return getList(HTTP_HEADERS_ADDITIONAL).stream()
                 .map(s -> s.split(HTTP_HEADERS_ADDITIONAL_DELIMITER))
-                .filter(h -> h.length > 1)
                 .collect(Collectors.toMap(h -> h[0], h -> h[1]));
     }
 

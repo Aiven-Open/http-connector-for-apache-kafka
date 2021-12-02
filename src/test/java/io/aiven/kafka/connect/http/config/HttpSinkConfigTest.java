@@ -326,7 +326,7 @@ final class HttpSinkConfigTest {
         final Map<String, String> properties = Map.of(
                 "http.url", "http://localhost:8090",
                 "http.authorization.type", "none",
-                "http.headers.additional", "test:value,test2:value2,test3,test4:value4"
+                "http.headers.additional", "test:value,test2:value2,test4:value4"
         );
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
