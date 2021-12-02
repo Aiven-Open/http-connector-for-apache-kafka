@@ -19,6 +19,7 @@ package io.aiven.kafka.connect.http.config;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +61,7 @@ final class HttpSinkConfigTest {
         assertEquals(500, config.batchMaxSize());
         assertEquals(1, config.maxRetries());
         assertEquals(3000, config.retryBackoffMs());
+        assertEquals(Collections.emptyMap(), config.getAdditionalHeaders());
         assertNull(config.oauth2AccessTokenUri());
         assertNull(config.oauth2ClientId());
         assertNull(config.oauth2ClientSecret());
@@ -317,6 +319,38 @@ final class HttpSinkConfigTest {
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
         assertEquals("application/json", config.headerContentType());
+    }
+
+    @Test
+    void headerAdditionalFields() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "http.headers.additional", "test:value,test2:value2,test4:value4"
+        );
+
+        final HttpSinkConfig config = new HttpSinkConfig(properties);
+        final var additionalHeaders = config.getAdditionalHeaders();
+
+        assertEquals(3, additionalHeaders.size());
+        assertEquals("value", additionalHeaders.get("test"));
+        assertEquals("value2", additionalHeaders.get("test2"));
+        assertEquals("value4", additionalHeaders.get("test4"));
+    }
+
+    @Test
+    void headerAdditionalField() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "http.headers.additional", "test:value"
+        );
+
+        final HttpSinkConfig config = new HttpSinkConfig(properties);
+        final var additionalHeaders = config.getAdditionalHeaders();
+
+        assertEquals(1, additionalHeaders.size());
+        assertEquals("value", additionalHeaders.get("test"));
     }
 
     @Test
