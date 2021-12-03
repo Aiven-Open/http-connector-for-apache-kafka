@@ -179,6 +179,45 @@ final class IntegrationTest {
 
     @Test
     @Timeout(30)
+    final void testContentTypeHeader() throws ExecutionException, InterruptedException {
+        final HeaderRecorderHandler headerRecorderHandler = new HeaderRecorderHandler();
+        mockServer = new MockServer(HTTP_PATH, CONTENT_TYPE);
+        mockServer.addHandler(headerRecorderHandler);
+        mockServer.start();
+
+        final Map<String, String> config = basicConnectorConfig();
+        config.put("http.authorization.type", "none");
+        config.put("http.headers.content.type", CONTENT_TYPE);
+        config.remove("http.headers.authorization");
+        connectRunner.createConnector(config);
+
+        final List<Future<RecordMetadata>> sendFutures = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            for (int partition = 0; partition < TEST_TOPIC_PARTITIONS; partition++) {
+                final String key = "key-" + i;
+                final String value = "value-" + i;
+                sendFutures.add(sendMessageAsync(TEST_TOPIC, partition, key, value));
+            }
+        }
+        producer.flush();
+        for (final Future<RecordMetadata> sendFuture : sendFutures) {
+            sendFuture.get();
+        }
+
+        TestUtils.waitForCondition(
+            () -> headerRecorderHandler.recorderHeaders().size() >= 1000,
+            15000,
+            "All requests received by HTTP server"
+        );
+
+        headerRecorderHandler.recorderHeaders().forEach(headers -> {
+            assertTrue(headers.containsKey("Content-Type"));
+            assertEquals(CONTENT_TYPE, headers.get("Content-Type"));
+        });
+    }
+
+    @Test
+    @Timeout(30)
     final void testAdditionalHeaders() throws ExecutionException, InterruptedException {
         final HeaderRecorderHandler headerRecorderHandler = new HeaderRecorderHandler();
         mockServer.addHandler(headerRecorderHandler);

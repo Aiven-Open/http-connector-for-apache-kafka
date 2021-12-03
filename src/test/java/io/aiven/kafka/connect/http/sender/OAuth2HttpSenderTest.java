@@ -43,6 +43,7 @@ import org.mockito.stubbing.Answer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -119,6 +120,39 @@ class OAuth2HttpSenderTest {
                 Optional.of("Basic bla-bla-bla-bla"),
                 r.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
         );
+    }
+
+    @Test
+    void buildSpecifiedContentType(@Mock final HttpResponse<String> accessTokenResponse)
+            throws IOException, InterruptedException {
+        final var config = new HashMap<>(defaultConfig());
+        config.put("oauth2.client.authorization.mode", "url");
+        config.put("oauth2.client.scope", "a,b,c");
+        config.put("oauth2.response.token.property", "some_token");
+        config.put("http.headers.content.type", "application/json");
+
+        final var httpSend =
+                new OAuth2HttpSender(
+                        new HttpSinkConfig(config),
+                        mockedHttpClient
+                );
+
+        final var requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+
+        final var accessTokenJson = Map.of(
+                "some_token", "bla-bla-bla-bla",
+                "token_type", "Basic"
+        );
+
+        when(accessTokenResponse.statusCode()).thenReturn(200);
+        when(accessTokenResponse.body()).thenReturn(objectMapper.writeValueAsString(accessTokenJson));
+        when(mockedHttpClient.<String>send(requestCaptor.capture(), any())).thenReturn(accessTokenResponse);
+
+        httpSend.send("SOME_BODY");
+
+        final var r = requestCaptor.getAllValues().get(1);
+        assertTrue(r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE).isPresent());
+        assertEquals("application/json", r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE).get());
     }
 
     @Test
