@@ -64,6 +64,7 @@ final class IntegrationTest {
     private static final String HTTP_PATH = "/send-data-here";
     private static final String AUTHORIZATION = "Bearer some-token";
     private static final String CONTENT_TYPE = "application/json";
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
 
     private static final String CONNECTOR_NAME = "test-source-connector";
 
@@ -211,8 +212,8 @@ final class IntegrationTest {
         );
 
         headerRecorderHandler.recorderHeaders().forEach(headers -> {
-            assertTrue(headers.containsKey("Content-Type"));
-            assertEquals(CONTENT_TYPE, headers.get("Content-Type"));
+            assertTrue(headers.containsKey(CONTENT_TYPE_HEADER));
+            assertEquals(CONTENT_TYPE, headers.get(CONTENT_TYPE_HEADER));
         });
     }
 

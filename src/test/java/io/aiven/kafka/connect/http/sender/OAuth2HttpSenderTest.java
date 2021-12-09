@@ -53,6 +53,8 @@ import static org.mockito.Mockito.when;
 @MockitoSettings(strictness = Strictness.STRICT_STUBS)
 class OAuth2HttpSenderTest {
 
+    private static final String CONTENT_TYPE_VALUE = "application/json";
+
     @Mock
     HttpClient mockedHttpClient;
 
@@ -129,7 +131,7 @@ class OAuth2HttpSenderTest {
         config.put("oauth2.client.authorization.mode", "url");
         config.put("oauth2.client.scope", "a,b,c");
         config.put("oauth2.response.token.property", "some_token");
-        config.put("http.headers.content.type", "application/json");
+        config.put("http.headers.content.type", CONTENT_TYPE_VALUE);
 
         final var httpSend =
                 new OAuth2HttpSender(
@@ -152,7 +154,7 @@ class OAuth2HttpSenderTest {
 
         final var r = requestCaptor.getAllValues().get(1);
         assertTrue(r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE).isPresent());
-        assertEquals("application/json", r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE).get());
+        assertEquals(CONTENT_TYPE_VALUE, r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE).get());
     }
 
     @Test

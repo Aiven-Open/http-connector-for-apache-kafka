@@ -23,10 +23,14 @@ import org.apache.kafka.common.config.ConfigException;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class HttpSinkConfigValidationTest {
+
+    private static final String CONTENT_TYPE_VALUE = "application/json";
+
     @Test
     void recommendedValuesForAuthorization() {
         final Map<String, String> properties = Map.of(
@@ -76,6 +80,41 @@ final class HttpSinkConfigValidationTest {
             ConfigException.class,
             () -> new HttpSinkConfig(properties),
             "Expected config exception due to empty value, but it parsed successfully"
+        );
+    }
+
+    @Test
+    void checkContentTypeValidation() {
+        final Map<String, String> properties = new HashMap<>(Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "http.headers.content.type", CONTENT_TYPE_VALUE
+        ));
+
+        assertDoesNotThrow(
+            () -> new HttpSinkConfig(properties),
+            "Expected config valid due to valid content type"
+        );
+
+        properties.replace("http.headers.content.type", "");
+        assertThrows(
+            ConfigException.class,
+            () -> new HttpSinkConfig(properties),
+            "Expected config exception due to empty content type"
+        );
+
+        properties.replace("http.headers.content.type", "        ");
+        assertThrows(
+            ConfigException.class,
+            () -> new HttpSinkConfig(properties),
+            "Expected config exception due to blank content type"
+        );
+
+        properties.replace("http.headers.content.type", " \r\n       ");
+        assertThrows(
+            ConfigException.class,
+            () -> new HttpSinkConfig(properties),
+            "Expected config exception due to blank content type"
         );
     }
 }
