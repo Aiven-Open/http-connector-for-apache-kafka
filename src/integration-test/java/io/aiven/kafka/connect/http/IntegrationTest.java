@@ -64,6 +64,7 @@ final class IntegrationTest {
     private static final String HTTP_PATH = "/send-data-here";
     private static final String AUTHORIZATION = "Bearer some-token";
     private static final String CONTENT_TYPE = "application/json";
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
 
     private static final String CONNECTOR_NAME = "test-source-connector";
 
@@ -175,6 +176,45 @@ final class IntegrationTest {
         log.info("{} HTTP requests were expected, {} were successfully delivered",
             expectedBodies.size(),
             bodyRecorderHandler.recorderBodies().size());
+    }
+
+    @Test
+    @Timeout(30)
+    final void testContentTypeHeader() throws ExecutionException, InterruptedException {
+        final HeaderRecorderHandler headerRecorderHandler = new HeaderRecorderHandler();
+        mockServer = new MockServer(HTTP_PATH, CONTENT_TYPE);
+        mockServer.addHandler(headerRecorderHandler);
+        mockServer.start();
+
+        final Map<String, String> config = basicConnectorConfig();
+        config.put("http.authorization.type", "none");
+        config.put("http.headers.content.type", CONTENT_TYPE);
+        config.remove("http.headers.authorization");
+        connectRunner.createConnector(config);
+
+        final List<Future<RecordMetadata>> sendFutures = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            for (int partition = 0; partition < TEST_TOPIC_PARTITIONS; partition++) {
+                final String key = "key-" + i;
+                final String value = "value-" + i;
+                sendFutures.add(sendMessageAsync(TEST_TOPIC, partition, key, value));
+            }
+        }
+        producer.flush();
+        for (final Future<RecordMetadata> sendFuture : sendFutures) {
+            sendFuture.get();
+        }
+
+        TestUtils.waitForCondition(
+            () -> headerRecorderHandler.recorderHeaders().size() >= 1000,
+            15000,
+            "All requests received by HTTP server"
+        );
+
+        headerRecorderHandler.recorderHeaders().forEach(headers -> {
+            assertTrue(headers.containsKey(CONTENT_TYPE_HEADER));
+            assertEquals(CONTENT_TYPE, headers.get(CONTENT_TYPE_HEADER));
+        });
     }
 
     @Test

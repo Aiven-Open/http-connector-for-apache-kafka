@@ -54,6 +54,20 @@ public final class MockServer {
         jettyServer.setHandler(this.handlers);
     }
 
+    public MockServer(final String expectedTarget,
+                      final String expectedContentTypeHeader) {
+        this.expectedTarget = expectedTarget;
+        this.expectedContentTypeHeader = expectedContentTypeHeader;
+        this.expectedAuthorizationHeader = "";
+
+        this.handlers = new HandlerList(
+                new ExpectedTargetHandler(),
+                new ExpectedContentTypeHandler()
+        );
+
+        jettyServer.setHandler(this.handlers);
+    }
+
     public void addHandler(final Handler handler) {
         this.handlers.addHandler(handler);
     }

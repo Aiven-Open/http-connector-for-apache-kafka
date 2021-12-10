@@ -33,17 +33,13 @@ interface HttpRequestBuilder {
         final var httpRequest = HttpRequest.newBuilder(config.httpUri())
                 .timeout(Duration.ofSeconds(config.httpTimeout()));
         config.getAdditionalHeaders().forEach(httpRequest::header);
+        if (config.headerContentType() != null) {
+            httpRequest.header(HEADER_CONTENT_TYPE, config.headerContentType());
+        }
         return httpRequest;
     };
 
-    HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = config -> {
-        final var requestBuilder =
-                DEFAULT_HTTP_REQUEST_BUILDER.build(config)
-                        .header(HEADER_AUTHORIZATION, config.headerAuthorization());
-        if (config.headerContentType() != null) {
-            requestBuilder.header(HEADER_CONTENT_TYPE, config.headerContentType());
-        }
-        return requestBuilder;
-    };
+    HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = config -> DEFAULT_HTTP_REQUEST_BUILDER.build(config)
+            .header(HEADER_AUTHORIZATION, config.headerAuthorization());
 
 }

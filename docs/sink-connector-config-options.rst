@@ -28,10 +28,11 @@ Connection
   * Importance: medium
 
 ``http.headers.content.type``
-  The value of Content-Type that will be send with each request.
+  The value of Content-Type that will be send with each request. Must be non-blank.
 
   * Type: string
   * Default: null
+  * Valid Values: Non-blank string
   * Importance: low
 
 ``http.headers.additional``
