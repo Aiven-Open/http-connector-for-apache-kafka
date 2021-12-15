@@ -4,7 +4,17 @@
 
 This is a sink [Kafka Connect](https://kafka.apache.org/documentation/#connect) connector that sends Kafka records over HTTP.
 
-TBD
+## How it works
+
+The connector uses the POST HTTP method to deliver records.
+
+The connector supports:
+- authorization (static, OAuth2);
+- setting HTTP headers;
+- batching;
+- delivery retries.
+
+See the [configuration options](docs/sink-connector-config-options.rst) for details.
 
 ## Development
 
