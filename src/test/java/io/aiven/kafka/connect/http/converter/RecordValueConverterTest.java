@@ -16,7 +16,11 @@
 
 package io.aiven.kafka.connect.http.converter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
@@ -61,6 +65,22 @@ class RecordValueConverterTest {
 
         assertEquals("some-str-value", recordValueConverter.convert(sinkRecord));
     }
+
+    @Test
+    void convertHashMapRecord() {
+        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA);
+
+        final Map value = new HashMap();
+        value.put("key", "value");
+
+        final var sinkRecord = new SinkRecord(
+                "some-topic", 0,
+                SchemaBuilder.string(),
+                "some-key", recordSchema, value, 1L);
+
+        assertEquals("{\"key\":\"value\"}", recordValueConverter.convert(sinkRecord));
+    }
+
 
     @Test
     void throwsDataExceptionForUknownRecordValueClass() {

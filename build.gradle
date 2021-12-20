@@ -99,6 +99,7 @@ dependencies {
     }
     integrationTestImplementation "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
     integrationTestImplementation "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
+    integrationTestImplementation "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
     integrationTestImplementation "org.apache.avro:avro:1.8.1"
     integrationTestImplementation "org.apache.kafka:connect-json:$kafkaVersion"
     integrationTestImplementation "org.apache.kafka:connect-transforms:$kafkaVersion"
