@@ -26,6 +26,9 @@ plugins {
 
     // https://docs.gradle.org/current/userguide/idea_plugin.html
     id 'idea'
+
+    // https://plugins.gradle.org/plugin/nebula.lint
+    id "nebula.lint" version "17.5.0"
 }
 
 repositories {
@@ -48,8 +51,10 @@ ext {
     jupiterVersion = "5.8.2"
     kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
     jettyVersion = "9.4.11.v20180605"
+    junit4Version = "4.13.2"
     log4jVersion = "2.17.1"
     mockitoVersion = "4.2.0"
+    servletVersion = "3.1.0"
     slf4japiVersion = "1.7.32"
     testcontainersVersion = "1.15.3"
 }
@@ -88,13 +93,18 @@ dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
     compileOnly "org.apache.kafka:connect-json:$kafkaVersion"
 
-    implementation "org.slf4j:slf4j-api:$slf4japiVersion"
+    implementation "org.apache.kafka:kafka-clients:$kafkaVersion"
+    implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "org.slf4j:slf4j-api:$slf4japiVersion"
 
-    testImplementation "org.hamcrest:hamcrest:$hamcrestVersion"
+    testRuntimeOnly "org.apache.kafka:connect-json:$kafkaVersion"
+    testRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
+
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
-
-    testImplementation "org.junit.jupiter:junit-jupiter:$jupiterVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:$jupiterVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
 
@@ -108,15 +118,18 @@ dependencies {
     integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
     integrationTestRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
 
-    integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion")
-    integrationTestImplementation "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
-    integrationTestImplementation "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
-    integrationTestImplementation "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
+    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
+    integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+    integrationTestImplementation "javax.servlet:javax.servlet-api:$servletVersion"
     integrationTestImplementation "org.apache.avro:avro:$avroVersion"
-    integrationTestImplementation "org.apache.kafka:connect-json:$kafkaVersion"
-    integrationTestImplementation "org.apache.kafka:connect-transforms:$kafkaVersion"
+    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-http:$jettyVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-server:$jettyVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-util:$jettyVersion"
+    integrationTestImplementation "junit:junit:$junit4Version" // This is for testcontainers
     integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
     integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version
+    integrationTestImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
 
     // Make test utils from 'test' available in 'integration-test'
     integrationTestImplementation sourceSets.test.output
@@ -187,3 +200,9 @@ task connectorConfigDoc {
         }
     }
 }
+
+gradleLint.alwaysRun = false
+gradleLint {
+    rules  = ['all-dependency']
+}
+
