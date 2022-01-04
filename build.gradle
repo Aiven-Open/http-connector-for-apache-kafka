@@ -29,6 +29,12 @@ plugins {
 
     // https://plugins.gradle.org/plugin/nebula.lint
     id "nebula.lint" version "17.5.0"
+
+    // https://plugins.gradle.org/plugin/com.github.spotbugs
+    id "com.github.spotbugs" version "4.8.0"
+
+    // https://plugins.gradle.org/plugin/com.diffplug.gradle.spotless
+    id "com.diffplug.spotless" version "6.1.0"
 }
 
 repositories {
@@ -52,10 +58,12 @@ ext {
     kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
     jettyVersion = "9.4.11.v20180605"
     junit4Version = "4.13.2"
+    jsr305Version = "3.0.2"
     log4jVersion = "2.17.1"
     mockitoVersion = "4.2.0"
     servletVersion = "3.1.0"
     slf4japiVersion = "1.7.32"
+    spotbugsAnnotationsVersion = "4.5.2"
     testcontainersVersion = "1.15.3"
 }
 
@@ -92,6 +100,10 @@ configurations {
 dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
     compileOnly "org.apache.kafka:connect-json:$kafkaVersion"
+
+    // For Spotbugs suppressions
+    compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
+    compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
 
     implementation "org.apache.kafka:kafka-clients:$kafkaVersion"
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
@@ -198,8 +210,53 @@ task connectorConfigDoc {
     }
 }
 
+spotless {
+    format "xml", {
+        target "**/*.xml"
+        targetExclude ".*/**", "gradle/wrapper/**"
+        eclipseWtp("xml").configFile("${project.rootDir}/config/spotless-eclipse-wtp-xml.prefs")
+        endWithNewline()
+    }
+
+    format "misc", {
+        target "**/*.gradle", "**/*.md", "**/*.properties"
+        targetExclude ".*/**", "gradle/wrapper/**"
+        endWithNewline()
+        indentWithSpaces()
+        trimTrailingWhitespace()
+    }
+}
+
+spotbugs {
+    toolVersion = "4.4.2"
+    excludeFilter = file("${project.rootDir}/config/spotbugs-exclude.xml")
+}
+spotbugsMain {
+    reports {
+        html {
+            enabled = true
+            stylesheet = 'fancy-hist.xsl'
+        }
+    }
+}
+spotbugsTest {
+    reports {
+        html {
+            enabled = true
+            stylesheet = 'fancy-hist.xsl'
+        }
+    }
+}
+spotbugsIntegrationTest {
+    reports {
+        html {
+            enabled = true
+            stylesheet = 'fancy-hist.xsl'
+        }
+    }
+}
+
 gradleLint.alwaysRun = false
 gradleLint {
     rules  = ['all-dependency']
 }
-
