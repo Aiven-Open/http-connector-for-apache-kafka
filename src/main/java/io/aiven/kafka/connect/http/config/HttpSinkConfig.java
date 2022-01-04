@@ -32,6 +32,8 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.errors.ConnectException;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class HttpSinkConfig extends AbstractConfig {
     private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
@@ -94,6 +96,7 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.NO_DEFAULT_VALUE,
             new ConfigDef.Validator() {
                 @Override
+                @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE") // Suppress the ConfigException with null value.
                 public void ensureValid(final String name, final Object value) {
                     if (value == null) {
                         throw new ConfigException(HTTP_AUTHORIZATION_TYPE_CONFIG, value);
@@ -396,6 +399,7 @@ public class HttpSinkConfig extends AbstractConfig {
         );
     }
 
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // Suppress groupCounter and groupCounter++
     private static void addTimeoutConfigGroup(final ConfigDef configDef) {
         int groupCounter = 0;
         configDef.define(
