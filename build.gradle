@@ -72,7 +72,7 @@ sourceSets {
     integrationTest {
         java.srcDir file('src/integration-test/java')
         resources.srcDir file('src/integration-test/resources')
-        compileClasspath += sourceSets.main.output + configurations.testRuntime
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
     }
 }
@@ -86,7 +86,7 @@ idea {
 
 configurations {
     integrationTestImplementation.extendsFrom testImplementation
-    integrationTestRuntime.extendsFrom testRuntime
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 dependencies {
@@ -101,16 +101,13 @@ dependencies {
     testRuntimeOnly "org.apache.kafka:connect-json:$kafkaVersion"
     testRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
+    testRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
 
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
     testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"
     testImplementation "org.junit.jupiter:junit-jupiter-params:$jupiterVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
-
-    testRuntime "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    testRuntime "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
-    testRuntime "org.apache.kafka:connect-json:$kafkaVersion"
 
     integrationTestRuntimeOnly "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
