@@ -26,10 +26,13 @@ plugins {
 
     // https://docs.gradle.org/current/userguide/idea_plugin.html
     id 'idea'
+
+    // https://plugins.gradle.org/plugin/nebula.lint
+    id "nebula.lint" version "17.5.0"
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
     maven {
         url "https://packages.confluent.io/maven"
     }
@@ -39,11 +42,21 @@ sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
 ext {
-    moduleName = 'io.aiven.kafka.connect.http'
+    moduleName = "io.aiven.kafka.connect.http"
 
-    kafkaVersion = '2.0.1'
-    testcontainersVersion = '1.15.3'
-    confluentPlatformVersion = "4.1.4"
+    avroVersion = "1.8.1" // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
+    confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
+    hamcrestVersion = "2.2"
+    jacksonVersion = "2.13.1" // This Jackson is used in the tests.
+    jupiterVersion = "5.8.2"
+    kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
+    jettyVersion = "9.4.11.v20180605"
+    junit4Version = "4.13.2"
+    log4jVersion = "2.17.1"
+    mockitoVersion = "4.2.0"
+    servletVersion = "3.1.0"
+    slf4japiVersion = "1.7.32"
+    testcontainersVersion = "1.15.3"
 }
 
 distributions {
@@ -80,31 +93,44 @@ dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
     compileOnly "org.apache.kafka:connect-json:$kafkaVersion"
 
-    implementation "org.slf4j:slf4j-api:1.7.28"
-    implementation "com.fasterxml.jackson.core:jackson-databind:2.12.2"
+    implementation "org.apache.kafka:kafka-clients:$kafkaVersion"
+    implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "org.slf4j:slf4j-api:$slf4japiVersion"
 
-    testImplementation "org.hamcrest:hamcrest:2.1"
+    testRuntimeOnly "org.apache.kafka:connect-json:$kafkaVersion"
+    testRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
+
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:$jupiterVersion"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
 
-    testImplementation "org.junit.jupiter:junit-jupiter:5.7.1"
-    testImplementation "org.mockito:mockito-core:3.8.0"
-    testImplementation "org.mockito:mockito-junit-jupiter:3.8.0"
-
-    testRuntime "org.apache.logging.log4j:log4j-slf4j-impl:2.12.1"
-    testRuntime "com.fasterxml.jackson.core:jackson-databind:2.12.2"
+    testRuntime "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    testRuntime "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     testRuntime "org.apache.kafka:connect-json:$kafkaVersion"
 
-    integrationTestImplementation("org.apache.kafka:connect-runtime:$kafkaVersion") {
-        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
-    }
-    integrationTestImplementation "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
-    integrationTestImplementation "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
-    integrationTestImplementation "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
-    integrationTestImplementation "org.apache.avro:avro:1.8.1"
-    integrationTestImplementation "org.apache.kafka:connect-json:$kafkaVersion"
-    integrationTestImplementation "org.apache.kafka:connect-transforms:$kafkaVersion"
+    integrationTestRuntimeOnly "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
+    integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
+    integrationTestRuntimeOnly "io.confluent:kafka-json-serializer:$confluentPlatformVersion"
+    integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
+    integrationTestRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
+
+    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
+    integrationTestImplementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+    integrationTestImplementation "javax.servlet:javax.servlet-api:$servletVersion"
+    integrationTestImplementation "org.apache.avro:avro:$avroVersion"
+    integrationTestImplementation "org.apache.kafka:connect-runtime:$kafkaVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-http:$jettyVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-server:$jettyVersion"
+    integrationTestImplementation "org.eclipse.jetty:jetty-util:$jettyVersion"
+    integrationTestImplementation "junit:junit:$junit4Version" // This is for testcontainers
     integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
     integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version
+    integrationTestImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+
     // Make test utils from 'test' available in 'integration-test'
     integrationTestImplementation sourceSets.test.output
 }
@@ -174,3 +200,9 @@ task connectorConfigDoc {
         }
     }
 }
+
+gradleLint.alwaysRun = false
+gradleLint {
+    rules  = ['all-dependency']
+}
+
