@@ -26,11 +26,21 @@ To build a distribution:
 ```
 (check `build/distributions/` then).
 
-Integration tests can be run with 
+Integration tests can be run with
 ```bash
 ./gradlew integrationTest
 ```
 and require [Docker](https://www.docker.com/) installed.
+
+# Formatting
+
+Checkstyle is used for verifying code formatting.
+For misc files Spotless is used.
+
+Both are run on Gradle `check` target. Spotless formatting can be done with
+```bash
+./gradlew spotlessApply
+```
 
 ## License
 

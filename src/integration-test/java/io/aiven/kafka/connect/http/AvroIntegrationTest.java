@@ -170,7 +170,9 @@ public class AvroIntegrationTest {
             }
         }
         producer.flush();
-
+        for (final Future<RecordMetadata> sendFuture : sendFutures) {
+            sendFuture.get();
+        }
         TestUtils.waitForCondition(() -> bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size(),
                 15000,
                 "All requests received by HTTP server"

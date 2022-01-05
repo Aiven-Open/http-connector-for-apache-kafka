@@ -157,6 +157,9 @@ public class JsonIntegrationTest {
             }
         }
         producer.flush();
+        for (final Future<RecordMetadata> sendFuture : sendFutures) {
+            sendFuture.get();
+        }
 
         TestUtils.waitForCondition(() -> bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size(),
                 15000,
@@ -189,10 +192,10 @@ public class JsonIntegrationTest {
 
     private static class Record {
         @JsonProperty
-        public String record;
+        private final String record;
 
         @JsonProperty
-        public String recordValue;
+        private final String recordValue;
 
         public Record(final String record, final String recordValue) {
             this.record = record;

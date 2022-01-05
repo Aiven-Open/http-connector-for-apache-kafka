@@ -18,6 +18,7 @@ package io.aiven.kafka.connect.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -340,6 +341,7 @@ final class IntegrationTest {
             10000,
             "Tasks failed"
         );
+        assertIterableEquals(expectedBodies, bodyRecorderHandler.recorderBodies());
     }
 
     @Test
@@ -425,8 +427,8 @@ final class IntegrationTest {
                                                     final String value) {
         final ProducerRecord<byte[], byte[]> msg = new ProducerRecord<>(
             topicName, partition,
-            key == null ? null : key.getBytes(),
-            value == null ? null : value.getBytes());
+            key == null ? null : key.getBytes(StandardCharsets.UTF_8),
+            value == null ? null : value.getBytes(StandardCharsets.UTF_8));
         return producer.send(msg);
     }
 }
