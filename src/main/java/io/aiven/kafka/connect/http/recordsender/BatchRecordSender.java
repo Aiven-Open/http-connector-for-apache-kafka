@@ -18,6 +18,7 @@ package io.aiven.kafka.connect.http.recordsender;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -25,13 +26,21 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import io.aiven.kafka.connect.http.sender.HttpSender;
 
 final class BatchRecordSender extends RecordSender {
-    private static final String BATCH_RECORD_SEPARATOR = "\n";
-
     private final int batchMaxSize;
+    private final String batchPrefix;
+    private final String batchSuffix;
+    private final String batchSeparator;
 
-    protected BatchRecordSender(final HttpSender httpSender, final int batchMaxSize) {
+    protected BatchRecordSender(final HttpSender httpSender,
+                                final int batchMaxSize,
+                                final String batchPrefix,
+                                final String batchSuffix,
+                                final String batchSeparator) {
         super(httpSender);
         this.batchMaxSize = batchMaxSize;
+        this.batchPrefix = batchPrefix;
+        this.batchSuffix = batchSuffix;
+        this.batchSeparator = batchSeparator;
     }
 
     @Override
@@ -54,9 +63,19 @@ final class BatchRecordSender extends RecordSender {
 
     private String createRequestBody(final Collection<SinkRecord> batch) {
         final StringBuilder result = new StringBuilder();
-        for (final SinkRecord record : batch) {
-            result.append(recordValueConverter.convert(record));
-            result.append(BATCH_RECORD_SEPARATOR);
+        if (!batchPrefix.isEmpty()) {
+            result.append(batchPrefix);
+        }
+        final Iterator<SinkRecord> it = batch.iterator();
+        if (it.hasNext()) {
+            result.append(recordValueConverter.convert(it.next()));
+            while (it.hasNext()) {
+                result.append(batchSeparator);
+                result.append(recordValueConverter.convert(it.next()));
+            }
+        }
+        if (!batchSuffix.isEmpty()) {
+            result.append(batchSuffix);
         }
         return result.toString();
     }

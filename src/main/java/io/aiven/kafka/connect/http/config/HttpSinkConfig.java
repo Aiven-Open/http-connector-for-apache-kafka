@@ -56,6 +56,9 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String BATCHING_GROUP = "Batching";
     private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
     private static final String BATCH_MAX_SIZE_CONFIG = "batch.max.size";
+    private static final String BATCH_PREFIX_CONFIG = "batch.prefix";
+    private static final String BATCH_SUFFIX_CONFIG = "batch.suffix";
+    private static final String BATCH_SEPARATOR_CONFIG = "batch.separator";
 
     private static final String DELIVERY_GROUP = "Delivery";
     private static final String MAX_RETRIES_CONFIG = "max.retries";
@@ -332,6 +335,48 @@ public class HttpSinkConfig extends AbstractConfig {
             ConfigDef.Width.MEDIUM,
             BATCHING_GROUP
         );
+
+        // ConfigKey automatically calls trim() on strings, but characters discarded by that method
+        // are commonly used as delimiters, including our default of "\n" for suffix and separator.
+        // We work around that by supplying null here the injecting the real default in the accessors.
+
+        configDef.define(
+            BATCH_PREFIX_CONFIG,
+            ConfigDef.Type.STRING,
+            null,
+            ConfigDef.Importance.HIGH,
+            "Prefix added to record batches. Written once before the first record of a batch. "
+                    + "Defaults to \"\" and may contain escape sequences like ``\\n``.",
+            BATCHING_GROUP,
+            groupCounter++,
+            ConfigDef.Width.MEDIUM,
+            BATCHING_GROUP
+        );
+
+        configDef.define(
+            BATCH_SUFFIX_CONFIG,
+            ConfigDef.Type.STRING,
+            null,
+            ConfigDef.Importance.HIGH,
+            "Suffix added to record batches. Written once after the last record of a batch. "
+                    + "Defaults to \"\\n\" (for backwards compatibility) and may contain escape sequences.",
+            BATCHING_GROUP,
+            groupCounter++,
+            ConfigDef.Width.MEDIUM,
+            BATCHING_GROUP
+        );
+
+        configDef.define(
+            BATCH_SEPARATOR_CONFIG,
+            ConfigDef.Type.STRING,
+            null,
+            ConfigDef.Importance.HIGH,
+            "Separator for records in a batch. Defaults to \"\\n\" and may contain escape sequences.",
+            BATCHING_GROUP,
+            groupCounter++,
+            ConfigDef.Width.MEDIUM,
+            BATCHING_GROUP
+        );
     }
 
     private static void addRetriesConfigGroup(final ConfigDef configDef) {
@@ -502,6 +547,24 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final int batchMaxSize() {
         return getInt(BATCH_MAX_SIZE_CONFIG);
+    }
+
+    // White space is significant for our batch delimiters but ConfigKey trims it out
+    // so we need to check the originals rather than using the normal machinery.
+    private String getOriginalString(final String key, final String defaultValue) {
+        return originalsStrings().getOrDefault(key, defaultValue);
+    }
+
+    public final String batchPrefix() {
+        return getOriginalString(BATCH_PREFIX_CONFIG, "");
+    }
+
+    public final String batchSuffix() {
+        return getOriginalString(BATCH_SUFFIX_CONFIG, "\n");
+    }
+
+    public final String batchSeparator() {
+        return getOriginalString(BATCH_SEPARATOR_CONFIG, "\n");
     }
 
     public int maxRetries() {
