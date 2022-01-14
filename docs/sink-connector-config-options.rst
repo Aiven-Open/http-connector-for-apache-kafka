@@ -118,7 +118,7 @@ Batching
   Prefix added to record batches. Written once before the first record of a batch. Defaults to "" and may contain escape sequences like ``\n``.
 
   * Type: string
-  * Default: null
+  * Default: ""
   * Importance: high
 
 ``batch.suffix``
