@@ -555,6 +555,7 @@ public class HttpSinkConfig extends AbstractConfig {
     // White space is significant for our batch delimiters but ConfigKey trims it out
     // so we need to check the originals rather than using the normal machinery.
     private String getOriginalString(final String key, final String defaultValue) {
+        get(key); // Assess key via the normal flow so it isn't reported as "unused".
         return originalsStrings().getOrDefault(key, defaultValue);
     }
 
