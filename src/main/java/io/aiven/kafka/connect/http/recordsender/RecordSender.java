@@ -38,7 +38,12 @@ public abstract class RecordSender {
 
     public static RecordSender createRecordSender(final HttpSender httpSender, final HttpSinkConfig config) {
         if (config.batchingEnabled()) {
-            return new BatchRecordSender(httpSender, config.batchMaxSize());
+            return new BatchRecordSender(
+                    httpSender,
+                    config.batchMaxSize(),
+                    config.batchPrefix(),
+                    config.batchSuffix(),
+                    config.batchSeparator());
         } else {
             return new SingleRecordSender(httpSender);
         }

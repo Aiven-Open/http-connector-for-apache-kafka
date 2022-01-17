@@ -114,6 +114,27 @@ Batching
   * Valid Values: [1,...,1000000]
   * Importance: medium
 
+``batch.prefix``
+  Prefix added to record batches. Written once before the first record of a batch. Defaults to "" and may contain escape sequences like ``\n``.
+
+  * Type: string
+  * Default: ""
+  * Importance: high
+
+``batch.suffix``
+  Suffix added to record batches. Written once after the last record of a batch. Defaults to "\n" (for backwards compatibility) and may contain escape sequences.
+
+  * Type: string
+  * Default: null
+  * Importance: high
+
+``batch.separator``
+  Separator for records in a batch. Defaults to "\n" and may contain escape sequences.
+
+  * Type: string
+  * Default: null
+  * Importance: high
+
 Delivery
 ^^^^^^^^
 

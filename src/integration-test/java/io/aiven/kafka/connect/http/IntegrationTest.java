@@ -406,6 +406,76 @@ final class IntegrationTest {
             bodyRecorderHandler.recorderBodies().size());
     }
 
+    @Test
+    @Timeout(30)
+    final void testBatchingWithConfig() throws ExecutionException, InterruptedException {
+        final int totalRecords = 1000;
+        final int batchMaxSize = 12;
+
+        final BodyRecorderHandler bodyRecorderHandler = new BodyRecorderHandler();
+        mockServer.addHandler(bodyRecorderHandler);
+        mockServer.start();
+
+        final Map<String, String> config = basicConnectorConfig();
+        config.put("batching.enabled", "true");
+        config.put("batch.max.size", Integer.toString(batchMaxSize));
+        // Batch as pseudo-JSON (assuming that each record is itself proper JSON).
+        config.put("batch.prefix", "[");
+        config.put("batch.suffix", "]");
+        config.put("batch.separator", ",");
+        connectRunner.createConnector(config);
+
+        final List<String> expectedBodies = new ArrayList<>();
+        int batchRecordCnt = 0;
+        StringBuilder currentBody = new StringBuilder("[");
+
+        final List<Future<RecordMetadata>> sendFutures = new ArrayList<>();
+        for (int i = 0; i < totalRecords; i++) {
+            for (int partition = 0; partition < TEST_TOPIC_PARTITIONS; partition++) {
+                final String key = "key-" + i;
+                final String value = "value-" + i;
+
+                sendFutures.add(sendMessageAsync(TEST_TOPIC, partition, key, value));
+
+                batchRecordCnt += 1;
+                currentBody.append(value);
+                if (batchRecordCnt >= batchMaxSize) {
+                    currentBody.append("]");
+                    expectedBodies.add(currentBody.toString());
+                    batchRecordCnt = 0;
+                    currentBody = new StringBuilder("[");
+                } else if (i + 1 < totalRecords) {
+                    currentBody.append(",");
+                }
+            }
+        }
+        if (batchRecordCnt > 0) {
+            currentBody.append("]");
+            expectedBodies.add(currentBody.toString());
+        }
+
+        producer.flush();
+        for (final Future<RecordMetadata> sendFuture : sendFutures) {
+            sendFuture.get();
+        }
+
+        TestUtils.waitForCondition(
+            () -> {
+                log.info("Received request bodies: {}/{}",
+                        bodyRecorderHandler.recorderBodies().size(), expectedBodies.size()
+                );
+                return bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size();
+            },
+            15000,
+            "All requests received by HTTP server"
+        );
+        assertIterableEquals(expectedBodies, bodyRecorderHandler.recorderBodies());
+
+        log.info("{} HTTP requests were expected, {} were successfully delivered",
+                expectedBodies.size(),
+                bodyRecorderHandler.recorderBodies().size());
+    }
+
     private Map<String, String> basicConnectorConfig() {
         return new HashMap<>(Map.of(
             "name", CONNECTOR_NAME,
