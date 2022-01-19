@@ -1,8 +1,8 @@
-# Aiven's HTTP Sink Connector for Apache Kafka
+# Aiven's HTTP Sink Connector for Apache Kafka®
 
 ![HTTP logo](docs/IETF-Badge-HTTP.png)
 
-This is a sink [Kafka Connect](https://kafka.apache.org/documentation/#connect) connector that sends Kafka records over HTTP.
+This is a sink [Apache Kafka Connect](https://kafka.apache.org/documentation/#connect) connector that sends Kafka records over HTTP.
 
 ## How it works
 
@@ -45,3 +45,7 @@ Both are run on Gradle `check` target. Spotless formatting can be done with
 ## License
 
 This project is licensed under the [Apache License, Version 2.0](LICENSE).
+
+## Trademark
+
+Apache Kafka, Apache Kafka Connect are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries.
