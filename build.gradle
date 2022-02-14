@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import org.gradle.util.DistributionLocator
+import org.gradle.util.GradleVersion
+
 plugins {
     // https://docs.gradle.org/current/userguide/java_library_plugin.html
     id 'java-library'
@@ -46,6 +49,19 @@ repositories {
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
+
+wrapper {
+    distributionType = 'ALL'
+    doLast {
+        final DistributionLocator locator = new DistributionLocator()
+        final GradleVersion version = GradleVersion.version(wrapper.gradleVersion)
+        final URI distributionUri = locator.getDistributionFor(version, wrapper.distributionType.name().toLowerCase(Locale.ENGLISH))
+        final URI sha256Uri = new URI(distributionUri.toString() + ".sha256")
+        final String sha256Sum = new String(sha256Uri.toURL().bytes)
+        wrapper.getPropertiesFile() << "distributionSha256Sum=${sha256Sum}\n"
+        println "Added checksum to wrapper properties"
+    }
+}
 
 ext {
     moduleName = "io.aiven.kafka.connect.http"
