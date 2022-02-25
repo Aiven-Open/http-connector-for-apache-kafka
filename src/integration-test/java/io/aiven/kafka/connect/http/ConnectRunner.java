@@ -79,10 +79,9 @@ final class ConnectRunner {
 
         final Plugins plugins = new Plugins(workerProps);
         final StandaloneConfig config = new StandaloneConfig(workerProps);
-
         final Worker worker = new Worker(
-            workerId, time, plugins, config, new MemoryOffsetBackingStore());
-        herder = new StandaloneHerder(worker, "cluster-id");
+            workerId, time, plugins, config, new MemoryOffsetBackingStore(), null);
+        herder = new StandaloneHerder(worker, "cluster-id", null);
 
         final RestServer rest = new RestServer(config);
 
