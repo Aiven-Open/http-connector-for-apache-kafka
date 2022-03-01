@@ -81,6 +81,8 @@ ext {
     slf4japiVersion = "1.7.32"
     spotbugsAnnotationsVersion = "4.5.2"
     testcontainersVersion = "1.15.3"
+    assertjVersion = "3.22.0"
+    awaitilityVersion = "4.1.1"
 }
 
 distributions {
@@ -136,6 +138,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-params:$jupiterVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
+    testImplementation "org.assertj:assertj-core:$assertjVersion"
 
     integrationTestRuntimeOnly "io.confluent:kafka-avro-serializer:$confluentPlatformVersion"
     integrationTestRuntimeOnly "io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion"
@@ -155,6 +158,7 @@ dependencies {
     integrationTestImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
     integrationTestImplementation "org.testcontainers:kafka:$testcontainersVersion" // this is not Kafka version
     integrationTestImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+    integrationTestImplementation "org.awaitility:awaitility:$awaitilityVersion"
 
     // Make test utils from 'test' available in 'integration-test'
     integrationTestImplementation sourceSets.test.output

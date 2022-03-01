@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +55,8 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -131,7 +134,7 @@ final class IntegrationTest {
     }
 
     @AfterEach
-    final void tearDown() {
+    void tearDown() {
         connectRunner.stop();
         adminClient.close();
         producer.close();
@@ -143,7 +146,7 @@ final class IntegrationTest {
 
     @Test
     @Timeout(30)
-    final void testBasicDelivery() throws ExecutionException, InterruptedException {
+    void testBasicDelivery() throws ExecutionException, InterruptedException {
         final BodyRecorderHandler bodyRecorderHandler = new BodyRecorderHandler();
         mockServer.addHandler(bodyRecorderHandler);
         mockServer.start();
@@ -181,7 +184,7 @@ final class IntegrationTest {
 
     @Test
     @Timeout(30)
-    final void testContentTypeHeader() throws ExecutionException, InterruptedException {
+    void testContentTypeHeader() throws ExecutionException, InterruptedException {
         final HeaderRecorderHandler headerRecorderHandler = new HeaderRecorderHandler();
         mockServer = new MockServer(HTTP_PATH, CONTENT_TYPE);
         mockServer.addHandler(headerRecorderHandler);
@@ -220,7 +223,7 @@ final class IntegrationTest {
 
     @Test
     @Timeout(30)
-    final void testAdditionalHeaders() throws ExecutionException, InterruptedException {
+    void testAdditionalHeaders() throws ExecutionException, InterruptedException {
         final HeaderRecorderHandler headerRecorderHandler = new HeaderRecorderHandler();
         mockServer.addHandler(headerRecorderHandler);
         mockServer.start();
@@ -262,7 +265,7 @@ final class IntegrationTest {
 
     @Test
     @Timeout(30)
-    final void testFailingEvery3rdRequest() throws ExecutionException, InterruptedException {
+    void testFailingEvery3rdRequest() throws ExecutionException, InterruptedException {
         mockServer.addHandler(new RequestFailingHandler(3));
 
         final BodyRecorderHandler bodyRecorderHandler = new BodyRecorderHandler();
@@ -303,7 +306,7 @@ final class IntegrationTest {
 
     @Test
     @Timeout(30)
-    final void testAlwaysFailingHttp() throws ExecutionException, InterruptedException {
+    void testAlwaysFailingHttp() throws ExecutionException, InterruptedException {
         mockServer.addHandler(new RequestFailingHandler(1));
 
         final BodyRecorderHandler bodyRecorderHandler = new BodyRecorderHandler();
@@ -312,13 +315,11 @@ final class IntegrationTest {
 
         connectRunner.createConnector(basicConnectorConfig());
 
-        final List<String> expectedBodies = new ArrayList<>();
         final List<Future<RecordMetadata>> sendFutures = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             for (int partition = 0; partition < TEST_TOPIC_PARTITIONS; partition++) {
                 final String key = "key-" + i;
                 final String value = "value-" + i;
-                expectedBodies.add(value);
                 sendFutures.add(sendMessageAsync(TEST_TOPIC, partition, key, value));
             }
         }
@@ -326,27 +327,18 @@ final class IntegrationTest {
         for (final Future<RecordMetadata> sendFuture : sendFutures) {
             sendFuture.get();
         }
-
-        TestUtils.waitForCondition(
-            () -> {
-                final ConnectorStateInfo connectorStateInfo = connectRunner.connectorState(CONNECTOR_NAME);
-                assert connectorStateInfo.tasks().size() == 1;
-                for (final ConnectorStateInfo.TaskState task : connectorStateInfo.tasks()) {
-                    if (!task.state().equals(TaskStatus.State.FAILED.name())) {
-                        return false;
-                    }
-                }
-                return true;
-            },
-            10000,
-            "Tasks failed"
-        );
-        assertIterableEquals(expectedBodies, bodyRecorderHandler.recorderBodies());
+        await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    final ConnectorStateInfo connectorStateInfo = connectRunner.connectorState(CONNECTOR_NAME);
+                    assertThat(connectorStateInfo.tasks())
+                            .extracting(ConnectorStateInfo.AbstractState::state)
+                            .containsExactly(TaskStatus.State.FAILED.name());
+                });
     }
 
     @Test
     @Timeout(30)
-    final void testBatching() throws ExecutionException, InterruptedException {
+    void testBatching() throws ExecutionException, InterruptedException {
         final int totalRecords = 1000;
         final int batchMaxSize = 12;
 
@@ -408,7 +400,7 @@ final class IntegrationTest {
 
     @Test
     @Timeout(30)
-    final void testBatchingWithConfig() throws ExecutionException, InterruptedException {
+    void testBatchingWithConfig() throws ExecutionException, InterruptedException {
         final int totalRecords = 1000;
         final int batchMaxSize = 12;
 
