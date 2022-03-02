@@ -19,6 +19,7 @@ package io.aiven.kafka.connect.http;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,21 +47,17 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @Testcontainers
 public class AvroIntegrationTest {
-
-    private static final Logger log = LoggerFactory.getLogger(IntegrationTest.class);
-
     private static final String HTTP_PATH = "/send-data-here";
     private static final String AUTHORIZATION = "Bearer some-token";
     private static final String CONTENT_TYPE = "application/json";
@@ -114,8 +111,7 @@ public class AvroIntegrationTest {
         assert transformDir.mkdirs();
         final File distFile = new File(System.getProperty("integration-test.distribution.file.path"));
         assert distFile.exists();
-        final String cmd = String.format("tar -xf %s --strip-components=1 -C %s",
-                distFile.toString(), transformDir.toString());
+        final String cmd = String.format("tar -xf %s --strip-components=1 -C %s", distFile, transformDir);
         final Process p = Runtime.getRuntime().exec(cmd);
         assert p.waitFor() == 0;
     }
@@ -179,16 +175,12 @@ public class AvroIntegrationTest {
         for (final Future<RecordMetadata> sendFuture : sendFutures) {
             sendFuture.get();
         }
-        TestUtils.waitForCondition(() -> bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size(),
-                15000,
-                "All requests received by HTTP server"
-        );
-        log.info("Recorded request bodies: {}", bodyRecorderHandler.recorderBodies());
-        assertIterableEquals(expectedBodies, bodyRecorderHandler.recorderBodies());
 
-        log.info("{} HTTP requests were expected, {} were successfully delivered",
-                expectedBodies.size(),
-                bodyRecorderHandler.recorderBodies().size());
+        await("All expected requests received by HTTP server")
+                .atMost(Duration.ofSeconds(15)).pollInterval(Duration.ofMillis(100))
+                .until(() -> bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size());
+
+        assertThat(bodyRecorderHandler.recorderBodies()).containsExactlyElementsOf(expectedBodies);
     }
 
     private Map<String, String> basicConnectorConfig() {

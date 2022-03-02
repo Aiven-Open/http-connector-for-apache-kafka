@@ -18,13 +18,11 @@ package io.aiven.kafka.connect.http.sender;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import org.apache.kafka.connect.errors.ConnectException;
 
@@ -41,9 +39,8 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.mockito.stubbing.Answer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -84,10 +81,8 @@ class OAuth2HttpSenderTest {
         httpSend.send("SOME_BODY");
 
         final var r = requestCaptor.getAllValues().get(1);
-        assertEquals(
-                Optional.of("Bearer bla-bla-bla"),
-                r.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
-        );
+        assertThat(r.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION))
+                .hasValue("Bearer bla-bla-bla");
     }
 
     @Test
@@ -118,10 +113,8 @@ class OAuth2HttpSenderTest {
         httpSend.send("SOME_BODY");
 
         final var r = requestCaptor.getAllValues().get(1);
-        assertEquals(
-                Optional.of("Basic bla-bla-bla-bla"),
-                r.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
-        );
+        assertThat(r.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION))
+                .hasValue("Basic bla-bla-bla-bla");
     }
 
     @Test
@@ -153,8 +146,8 @@ class OAuth2HttpSenderTest {
         httpSend.send("SOME_BODY");
 
         final var r = requestCaptor.getAllValues().get(1);
-        assertTrue(r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE).isPresent());
-        assertEquals(CONTENT_TYPE_VALUE, r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE).get());
+        assertThat(r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE))
+                .hasValue(CONTENT_TYPE_VALUE);
     }
 
     @Test
@@ -242,17 +235,11 @@ class OAuth2HttpSenderTest {
         httpSend.send("SOME_BODY_2");
         httpSend.send("SOME_BODY_3");
 
-        assertEquals(2,
-                requestCaptor.getAllValues()
-                        .stream()
-                        .filter(r -> {
-                            try {
-                                return r.uri().equals(new URI("http://localhost:42/token"));
-                            } catch (final URISyntaxException e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                .count());
+        assertThat(requestCaptor.getAllValues())
+                .map(HttpRequest::uri)
+                .filteredOnAssertions(uri ->
+                        assertThat(uri).hasToString("http://localhost:42/token"))
+                .hasSize(2);
     }
 
     @Test
@@ -270,12 +257,9 @@ class OAuth2HttpSenderTest {
         when(mockedHttpClient.<String>send(any(HttpRequest.class), any()))
                 .thenReturn(response);
 
-        final var e = assertThrows(ConnectException.class, () -> httpSend.send("SOME_BODY"));
-
-        assertEquals(
-                "Sending failed and no retries remain, stopping",
-                e.getMessage());
-
+        assertThatExceptionOfType(ConnectException.class)
+                .isThrownBy(() -> httpSend.send("SOME_BODY"))
+                .withMessage("Sending failed and no retries remain, stopping");
     }
 
     @Test
@@ -327,15 +311,12 @@ class OAuth2HttpSenderTest {
                     }
                 });
 
-        final var e = assertThrows(ConnectException.class, () -> {
-            httpSend.send("SOME_BODY_1");
-            httpSend.send("SOME_BODY_2");
-        });
-
-        assertEquals(
-                "Sending failed and no retries remain, stopping",
-                e.getMessage());
-
+        assertThatExceptionOfType(ConnectException.class)
+                .isThrownBy(() -> {
+                    httpSend.send("SOME_BODY_1");
+                    httpSend.send("SOME_BODY_2");
+                })
+                .withMessage("Sending failed and no retries remain, stopping");
     }
 
 

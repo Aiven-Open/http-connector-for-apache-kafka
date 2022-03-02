@@ -18,17 +18,16 @@ package io.aiven.kafka.connect.http.sender;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
-import java.util.Optional;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.as;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class AccessTokenHttpRequestBuilderTest {
 
@@ -45,21 +44,20 @@ class AccessTokenHttpRequestBuilderTest {
         final var accessTokenRequest =
                 new AccessTokenHttpRequestBuilder().build(config).build();
 
-        assertEquals(new URL("http://localhost:42/token").toURI(), accessTokenRequest.uri());
+        assertThat(accessTokenRequest.uri()).isEqualTo(new URL("http://localhost:42/token").toURI());
 
         final var expectedAuthHeader = "Basic "
                 + Base64.getEncoder()
                     .encodeToString("some_client_id:some_client_secret".getBytes(StandardCharsets.UTF_8));
 
-        assertEquals(
-                Optional.of(Duration.ofSeconds(config.httpTimeout())),
-                accessTokenRequest.timeout());
-        assertEquals("POST",
-                accessTokenRequest.method());
-        assertEquals(Optional.of("application/x-www-form-urlencoded"),
-                accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE));
-        assertEquals(Optional.of(expectedAuthHeader),
-                accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION));
+        assertThat(accessTokenRequest.timeout()).isPresent()
+                .get(as(InstanceOfAssertFactories.DURATION))
+                .hasSeconds(config.httpTimeout());
+        assertThat(accessTokenRequest.method()).isEqualTo("POST");
+        assertThat(accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE))
+                .hasValue("application/x-www-form-urlencoded");
+        assertThat(accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION))
+                .hasValue(expectedAuthHeader);
 
     }
 
@@ -78,16 +76,16 @@ class AccessTokenHttpRequestBuilderTest {
         final var accessTokenRequest =
                 new AccessTokenHttpRequestBuilder().build(config).build();
 
-        assertEquals(new URL("http://localhost:42/token").toURI(), accessTokenRequest.uri());
+        assertThat(accessTokenRequest.uri()).isEqualTo(new URL("http://localhost:42/token").toURI());
 
-        assertEquals(
-                Optional.of(Duration.ofSeconds(config.httpTimeout())),
-                accessTokenRequest.timeout());
-        assertEquals("POST",
-                accessTokenRequest.method());
-        assertEquals(Optional.of("application/x-www-form-urlencoded"),
-                accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE));
-        assertTrue(accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION).isEmpty());
+        assertThat(accessTokenRequest.timeout()).isPresent()
+                .get(as(InstanceOfAssertFactories.DURATION))
+                .hasSeconds(config.httpTimeout());
+
+        assertThat(accessTokenRequest.method()).isEqualTo("POST");
+        assertThat(accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE))
+                .hasValue("application/x-www-form-urlencoded");
+        assertThat(accessTokenRequest.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)).isEmpty();
     }
 
 }

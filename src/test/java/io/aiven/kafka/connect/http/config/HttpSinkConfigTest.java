@@ -16,59 +16,65 @@
 
 package io.aiven.kafka.connect.http.config;
 
-import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.config.ConfigValue;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.Assertions.from;
 
 final class HttpSinkConfigTest {
 
     @Test
     void requiredConfigurations() {
         final Map<String, String> properties = Map.of();
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties));
-        assertEquals("Missing required configuration \"http.url\" which has no default value.", t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to missing http.url")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Missing required configuration \"http.url\" which has no default value.");
+
     }
 
     @Test
-    void correctMinimalConfig() throws MalformedURLException, URISyntaxException {
+    void correctMinimalConfig() throws URISyntaxException {
         final Map<String, String> properties = Map.of(
                 "http.url", "http://localhost:8090",
                 "http.authorization.type", "none"
         );
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
-        assertEquals(new URL("http://localhost:8090").toURI(), config.httpUri());
-        assertEquals(AuthorizationType.NONE, config.authorizationType());
-        assertNull(config.headerContentType());
-        assertFalse(config.batchingEnabled());
-        assertEquals(500, config.batchMaxSize());
-        assertEquals(1, config.maxRetries());
-        assertEquals(3000, config.retryBackoffMs());
-        assertEquals(Collections.emptyMap(), config.getAdditionalHeaders());
-        assertNull(config.oauth2AccessTokenUri());
-        assertNull(config.oauth2ClientId());
-        assertNull(config.oauth2ClientSecret());
-        assertNull(config.oauth2ClientScope());
-        assertEquals(OAuth2AuthorizationMode.HEADER, config.oauth2AuthorizationMode());
-        assertEquals("access_token", config.oauth2ResponseTokenProperty());
-        assertNull(config.kafkaRetryBackoffMs());
+        assertThat(config)
+                .returns(new URI("http://localhost:8090"), from(HttpSinkConfig::httpUri))
+                .returns(AuthorizationType.NONE, from(HttpSinkConfig::authorizationType))
+                .returns(null, from(HttpSinkConfig::headerContentType))
+                .returns(false, from(HttpSinkConfig::batchingEnabled))
+                .returns(500, from(HttpSinkConfig::batchMaxSize))
+                .returns(1, from(HttpSinkConfig::maxRetries))
+                .returns(3000, from(HttpSinkConfig::retryBackoffMs))
+                .returns(Collections.emptyMap(), from(HttpSinkConfig::getAdditionalHeaders))
+                .returns(null, from(HttpSinkConfig::oauth2AccessTokenUri))
+                .returns(null, from(HttpSinkConfig::oauth2ClientId))
+                .returns(null, from(HttpSinkConfig::oauth2ClientSecret))
+                .returns(null, from(HttpSinkConfig::oauth2ClientScope))
+                .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
+                .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty))
+                .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs));
     }
 
     @Test
@@ -79,12 +85,10 @@ final class HttpSinkConfigTest {
                 "oauth2.access.token.url", ""
         );
 
-        final var emptyStringT =
-                assertThrows(ConfigException.class, () -> new HttpSinkConfig(emptyAccessTokenUrlConfig));
-        assertEquals(
-                "Invalid value  for configuration oauth2.access.token.url: malformed URL",
-                emptyStringT.getMessage()
-        );
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to empty OAuth access token URL")
+                .isThrownBy(() -> new HttpSinkConfig(emptyAccessTokenUrlConfig))
+                .withMessage("Invalid value  for configuration oauth2.access.token.url: malformed URL");
 
         final var wrongAccessTokenUrlConfig = Map.of(
                 "http.url", "http://localhost:8090",
@@ -92,13 +96,10 @@ final class HttpSinkConfigTest {
                 "oauth2.access.token.url", ";http://localhost:8090"
         );
 
-        final var wrongUrlT =
-                assertThrows(ConfigException.class, () -> new HttpSinkConfig(wrongAccessTokenUrlConfig));
-        assertEquals(
-                "Invalid value ;http://localhost:8090 for configuration "
-                        + "oauth2.access.token.url: malformed URL",
-                wrongUrlT.getMessage()
-        );
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to malformed OAuth access token URL")
+                .isThrownBy(() -> new HttpSinkConfig(wrongAccessTokenUrlConfig))
+                .withMessage("Invalid value ;http://localhost:8090 for configuration oauth2.access.token.url: malformed URL");
     }
 
     @Test
@@ -112,13 +113,11 @@ final class HttpSinkConfigTest {
                 "oauth2.client.authorization.mode", "AAAABBBCCCC"
         );
 
-        final var t =
-                assertThrows(ConfigException.class, () -> new HttpSinkConfig(invalidClientAuthorizationModeConfig));
-        assertEquals(
-                "Invalid value AAAABBBCCCC for configuration oauth2.client.authorization.mode: "
-                        + "supported values are: [HEADER, URL]",
-                t.getMessage()
-        );
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to invalid client authorization mode")
+                .isThrownBy(() -> new HttpSinkConfig(invalidClientAuthorizationModeConfig))
+                .withMessage("Invalid value AAAABBBCCCC for configuration oauth2.client.authorization.mode: "
+                        + "supported values are: [HEADER, URL]");
     }
 
     @Test
@@ -128,12 +127,11 @@ final class HttpSinkConfigTest {
                 "http.authorization.type", "oauth2"
         );
 
-        final var noAccessTokenUrlE =
-                assertThrows(ConfigException.class, () -> new HttpSinkConfig(noAccessTokenUrlConfig));
-        assertEquals(
-                "Invalid value null for configuration oauth2.access.token.url: "
-                        + "Must be present when http.headers.content.type = OAUTH2",
-                noAccessTokenUrlE.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to missing OAuth access token URL")
+                .isThrownBy(() -> new HttpSinkConfig(noAccessTokenUrlConfig))
+                .withMessage("Invalid value null for configuration oauth2.access.token.url: "
+                        + "Must be present when http.headers.content.type = OAUTH2");
 
         final var noSecretIdConfig = Map.of(
                 "http.url", "http://localhost:8090",
@@ -141,12 +139,11 @@ final class HttpSinkConfigTest {
                 "oauth2.access.token.url", "http://localhost:8090/token"
         );
 
-        final var noSecretIdConfigE =
-                assertThrows(ConfigException.class, () -> new HttpSinkConfig(noSecretIdConfig));
-        assertEquals(
-                "Invalid value null for configuration oauth2.client.id: "
-                        + "Must be present when http.headers.content.type = OAUTH2",
-                noSecretIdConfigE.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to missing OAuth client id")
+                .isThrownBy(() -> new HttpSinkConfig(noSecretIdConfig))
+                .withMessage("Invalid value null for configuration oauth2.client.id: "
+                        + "Must be present when http.headers.content.type = OAUTH2");
 
         final var noSecretConfig = Map.of(
                 "http.url", "http://localhost:8090",
@@ -155,17 +152,15 @@ final class HttpSinkConfigTest {
                 "oauth2.client.id", "client_id"
         );
 
-        final var noSecretConfigE =
-                assertThrows(ConfigException.class, () -> new HttpSinkConfig(noSecretConfig));
-        assertEquals(
-                "Invalid value null for configuration oauth2.client.secret: "
-                        + "Must be present when http.headers.content.type = OAUTH2",
-                noSecretConfigE.getMessage());
-
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to missing OAuth client secret")
+                .isThrownBy(() -> new HttpSinkConfig(noSecretConfig))
+                .withMessage("Invalid value null for configuration oauth2.client.secret: "
+                        + "Must be present when http.headers.content.type = OAUTH2");
     }
 
     @Test
-    void validOAuth2MinimalConfiguration() throws MalformedURLException, URISyntaxException {
+    void validOAuth2MinimalConfiguration() throws URISyntaxException {
 
         final var oauth2Config = Map.of(
                 "http.url", "http://localhost:8090",
@@ -177,16 +172,17 @@ final class HttpSinkConfigTest {
 
         final var config = new HttpSinkConfig(oauth2Config);
 
-        assertEquals(new URL("http://localhost:8090/token").toURI(), config.oauth2AccessTokenUri());
-        assertEquals("client_id", config.oauth2ClientId());
-        assertEquals("client_secret", config.oauth2ClientSecret().value());
-        assertEquals(OAuth2AuthorizationMode.HEADER, config.oauth2AuthorizationMode());
-        assertEquals("access_token", config.oauth2ResponseTokenProperty());
-        assertNull(config.oauth2ClientScope());
+        assertThat(config)
+                .returns(new URI("http://localhost:8090/token"), from(HttpSinkConfig::oauth2AccessTokenUri))
+                .returns("client_id", from(HttpSinkConfig::oauth2ClientId))
+                .returns("client_secret", from(httpSinkConfig -> httpSinkConfig.oauth2ClientSecret().value()))
+                .returns(null, from(HttpSinkConfig::oauth2ClientScope))
+                .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
+                .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty));
     }
 
     @Test
-    void validOAuth2FullConfiguration() throws MalformedURLException, URISyntaxException {
+    void validOAuth2FullConfiguration() throws URISyntaxException {
 
         final var oauth2Config = Map.of(
                 "http.url", "http://localhost:8090",
@@ -201,12 +197,13 @@ final class HttpSinkConfigTest {
 
         final var config = new HttpSinkConfig(oauth2Config);
 
-        assertEquals(new URL("http://localhost:8090/token").toURI(), config.oauth2AccessTokenUri());
-        assertEquals("client_id", config.oauth2ClientId());
-        assertEquals("client_secret", config.oauth2ClientSecret().value());
-        assertEquals(OAuth2AuthorizationMode.URL, config.oauth2AuthorizationMode());
-        assertEquals("moooooo", config.oauth2ResponseTokenProperty());
-        assertEquals("scope1,scope2", config.oauth2ClientScope());
+        assertThat(config)
+                .returns(new URI("http://localhost:8090/token"), from(HttpSinkConfig::oauth2AccessTokenUri))
+                .returns("client_id", from(HttpSinkConfig::oauth2ClientId))
+                .returns("client_secret", from(httpSinkConfig -> httpSinkConfig.oauth2ClientSecret().value()))
+                .returns("scope1,scope2", from(HttpSinkConfig::oauth2ClientScope))
+                .returns(OAuth2AuthorizationMode.URL, from(HttpSinkConfig::oauth2AuthorizationMode))
+                .returns("moooooo", from(HttpSinkConfig::oauth2ResponseTokenProperty));
     }
 
     @Test
@@ -216,10 +213,10 @@ final class HttpSinkConfigTest {
                 "http.authorization.type", "none"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties));
-        assertEquals("Invalid value #http://localhost:8090 for configuration http.url: malformed URL",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to malformed http.url")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value #http://localhost:8090 for configuration http.url: malformed URL");
     }
 
     @Test
@@ -228,39 +225,46 @@ final class HttpSinkConfigTest {
                 "http.url", "http://localhost:8090"
         );
 
-        final Throwable t = assertThrows(ConfigException.class, () -> new HttpSinkConfig(properties));
-        assertEquals("Missing required configuration \"http.authorization.type\" which has no default value.",
-                t.getMessage());
+
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to missing authorization type")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Missing required configuration \"http.authorization.type\" which has no default value.");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"none", "static", "oauth2"})
-    void supportedAuthorizationType(final String authorization) {
-        Map<String, String> properties = Map.of(
-            "http.url", "http://localhost:8090",
-            "http.authorization.type", authorization
-        );
-
-        final AuthorizationType expectedAuthorizationType;
-        if ("none".equals(authorization)) {
-            expectedAuthorizationType = AuthorizationType.NONE;
-        } else if ("static".equals(authorization)) {
-            expectedAuthorizationType = AuthorizationType.STATIC;
-            properties = new HashMap<>(properties);
-            properties.put("http.headers.authorization", "some");
-        } else if ("oauth2".equals(authorization)) {
-            expectedAuthorizationType = AuthorizationType.OAUTH2;
-            properties = new HashMap<>(properties);
-            properties.put("oauth2.access.token.url", "http://localhost:42");
-            properties.put("oauth2.client.id", "client_id");
-            properties.put("oauth2.client.secret", "client_secret");
-        } else {
-            throw new RuntimeException("Shouldn't be here");
-        }
-
+    @MethodSource("authProperties")
+    void supportedAuthorizationType(
+            final AuthorizationType expectedAuthorizationType,
+            final Map<String, String> properties
+    ) {
         final HttpSinkConfig config = new HttpSinkConfig(properties);
 
-        assertEquals(expectedAuthorizationType, config.authorizationType());
+        assertThat(config.authorizationType()).isEqualTo(expectedAuthorizationType);
+    }
+
+    private static Stream<Arguments> authProperties() {
+        return Stream.of(
+                Arguments.of(AuthorizationType.NONE,
+                        Map.of(
+                                "http.url", "http://localhost:8090",
+                                "http.authorization.type", AuthorizationType.NONE.name
+                        )),
+                Arguments.of(AuthorizationType.STATIC,
+                        Map.of(
+                                "http.url", "http://localhost:8090",
+                                "http.authorization.type", AuthorizationType.STATIC.name,
+                                "http.headers.authorization", "some"
+                        )),
+                Arguments.of(AuthorizationType.OAUTH2,
+                        Map.of(
+                                "http.url", "http://localhost:8090",
+                                "http.authorization.type", AuthorizationType.OAUTH2.name,
+                                "oauth2.access.token.url", "http://localhost:42",
+                                "oauth2.client.id", "client_id",
+                                "oauth2.client.secret", "client_secret"
+                        ))
+        );
     }
 
     @Test
@@ -270,12 +274,23 @@ final class HttpSinkConfigTest {
                 "http.authorization.type", "unsupported"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to unsupported authorization type")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value unsupported for configuration http.authorization.type: "
+                        + "supported values are: [none, oauth2, static]");
+    }
+
+    @Test
+    void recommendedValuesForAuthorizationType() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090"
         );
-        assertEquals("Invalid value unsupported for configuration http.authorization.type: "
-                        + "supported values are: [none, oauth2, static]",
-                t.getMessage());
+
+        assertThat(HttpSinkConfig.configDef().validate(properties))
+                .filteredOn(x -> x.name().equals("http.authorization.type"))
+                .first().extracting(ConfigValue::recommendedValues).asList()
+                .containsExactlyElementsOf(AuthorizationType.NAMES);
     }
 
     @Test
@@ -285,12 +300,11 @@ final class HttpSinkConfigTest {
                 "http.authorization.type", "static"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
-        );
-        assertEquals("Invalid value null for configuration http.headers.authorization: "
-                        + "Must be present when http.headers.content.type = STATIC",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to missing authorization headers")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value null for configuration http.headers.authorization: "
+                        + "Must be present when http.headers.content.type = STATIC");
     }
 
     @Test
@@ -301,12 +315,11 @@ final class HttpSinkConfigTest {
                 "http.headers.authorization", "some"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
-        );
-        assertEquals("Invalid value [hidden] for configuration http.headers.authorization: "
-                        + "Must not be present when http.headers.content.type != STATIC",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to invalid authorization header")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value [hidden] for configuration http.headers.authorization: "
+                        + "Must not be present when http.headers.content.type != STATIC");
     }
 
     @Test
@@ -318,7 +331,20 @@ final class HttpSinkConfigTest {
         );
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
-        assertEquals("application/json", config.headerContentType());
+        assertThat(config.headerContentType()).isEqualTo("application/json");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "        ", " \r\n       "})
+    void checkContentTypeValidationWithBlankValues(final String contentType) {
+        final Map<String, String> properties = new HashMap<>(Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "http.headers.content.type", contentType
+        ));
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to empty or blank content type")
+                .isThrownBy(() -> new HttpSinkConfig(properties));
     }
 
     @Test
@@ -332,25 +358,31 @@ final class HttpSinkConfigTest {
         final HttpSinkConfig config = new HttpSinkConfig(properties);
         final var additionalHeaders = config.getAdditionalHeaders();
 
-        assertEquals(3, additionalHeaders.size());
-        assertEquals("value", additionalHeaders.get("test"));
-        assertEquals("value2", additionalHeaders.get("test2"));
-        assertEquals("value4", additionalHeaders.get("test4"));
+        assertThat(additionalHeaders)
+            .containsOnly(
+                entry("test", "value"),
+                entry("test2", "value2"),
+                entry("test4", "value4")
+            );
     }
 
-    @Test
-    void headerAdditionalField() {
-        final Map<String, String> properties = Map.of(
+    @ParameterizedTest
+    @CsvSource({
+        "'test:value,test:valueUpperCase',   Duplicate keys are not allowed (case-insensitive)",
+        "'test:value,TEST:valueUpperCase',   Duplicate keys are not allowed (case-insensitive)",
+        "'test:value,wrong,test1:test1',     Header field should use format header:value",
+        "'test:value,,test2:test2',          Header field should use format header:value"
+    })
+    void checkAdditionalHeadersValidation(final String headersValue, final String expectedExceptionMessage) {
+        final Map<String, String> properties = new HashMap<>(Map.of(
                 "http.url", "http://localhost:8090",
                 "http.authorization.type", "none",
-                "http.headers.additional", "test:value"
-        );
+                "http.headers.additional", headersValue
+        ));
 
-        final HttpSinkConfig config = new HttpSinkConfig(properties);
-        final var additionalHeaders = config.getAdditionalHeaders();
-
-        assertEquals(1, additionalHeaders.size());
-        assertEquals("value", additionalHeaders.get("test"));
+        assertThatExceptionOfType(ConfigException.class)
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage(expectedExceptionMessage);
     }
 
     @Test
@@ -363,8 +395,8 @@ final class HttpSinkConfigTest {
         );
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
-        assertTrue(config.batchingEnabled());
-        assertEquals(123456, config.batchMaxSize());
+        assertThat(config.batchingEnabled()).isTrue();
+        assertThat(config.batchMaxSize()).isEqualTo(123456);
     }
 
     @Test
@@ -376,11 +408,11 @@ final class HttpSinkConfigTest {
                 "batch.max.size", "1000001"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
-        );
-        assertEquals("Invalid value 1000001 for configuration batch.max.size: Value must be no more than 1000000",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to invalid maximum batch size")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value 1000001 for configuration batch.max.size: "
+                        + "Value must be no more than 1000000");
     }
 
     @Test
@@ -391,11 +423,10 @@ final class HttpSinkConfigTest {
                 "max.retries", "-1"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
-        );
-        assertEquals("Invalid value -1 for configuration max.retries: Value must be at least 0",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to invalid maximum number of retries")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value -1 for configuration max.retries: Value must be at least 0");
     }
 
     @Test
@@ -407,7 +438,7 @@ final class HttpSinkConfigTest {
         );
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
-        assertEquals(123, config.maxRetries());
+        assertThat(config.maxRetries()).isEqualTo(123);
     }
 
     @Test
@@ -418,11 +449,10 @@ final class HttpSinkConfigTest {
                 "retry.backoff.ms", "-1"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
-        );
-        assertEquals("Invalid value -1 for configuration retry.backoff.ms: Value must be at least 0",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to invalid value of retry.backoff.ms")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value -1 for configuration retry.backoff.ms: Value must be at least 0");
     }
 
     @Test
@@ -433,14 +463,12 @@ final class HttpSinkConfigTest {
                 "kafka.retry.backoff.ms", String.valueOf(TimeUnit.HOURS.toMillis(25))
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
-        );
-        assertEquals("Invalid value 90000000 for configuration kafka.retry.backoff.ms: "
-                        + "Value must be no more than 86400000 (24 hours)",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to invalid value of kafka.retry.backoff.ms")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value 90000000 for configuration kafka.retry.backoff.ms: "
+                        + "Value must be no more than 86400000 (24 hours)");
     }
-
 
     @Test
     void negativeKafkaRetryBackoffMs() {
@@ -450,11 +478,10 @@ final class HttpSinkConfigTest {
                 "kafka.retry.backoff.ms", "-1"
         );
 
-        final Throwable t = assertThrows(
-                ConfigException.class, () -> new HttpSinkConfig(properties)
-        );
-        assertEquals("Invalid value -1 for configuration kafka.retry.backoff.ms: Value must be at least 0",
-                t.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to invalid value of kafka.retry.backoff.ms")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value -1 for configuration kafka.retry.backoff.ms: Value must be at least 0");
     }
 
     @Test
@@ -466,7 +493,7 @@ final class HttpSinkConfigTest {
         );
 
         final HttpSinkConfig config = new HttpSinkConfig(properties);
-        assertEquals(12345, config.retryBackoffMs());
+        assertThat(config.retryBackoffMs()).isEqualTo(12345);
     }
 
     @Test
@@ -478,7 +505,7 @@ final class HttpSinkConfigTest {
         );
 
         final var config = new HttpSinkConfig(properties);
-        assertEquals(6000, config.kafkaRetryBackoffMs());
+        assertThat(config.kafkaRetryBackoffMs()).isEqualTo(6000);
     }
 
     @Test
@@ -489,7 +516,7 @@ final class HttpSinkConfigTest {
         );
 
         final var config = new HttpSinkConfig(properties);
-        assertEquals(30, config.httpTimeout());
+        assertThat(config.httpTimeout()).isEqualTo(30);
     }
 
     @Test
@@ -501,6 +528,6 @@ final class HttpSinkConfigTest {
         );
 
         final var config = new HttpSinkConfig(properties);
-        assertEquals(5, config.httpTimeout());
+        assertThat(config.httpTimeout()).isEqualTo(5);
     }
 }

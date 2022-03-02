@@ -28,8 +28,8 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class RecordValueConverterTest {
 
@@ -51,7 +51,8 @@ class RecordValueConverterTest {
                 SchemaBuilder.string(),
                 "some-key", recordSchema, value, 1L);
 
-        assertEquals("{\"name\":\"user-0\",\"value\":\"value-0\"}", recordValueConverter.convert(sinkRecord));
+        assertThat(recordValueConverter.convert(sinkRecord))
+                .isEqualTo("{\"name\":\"user-0\",\"value\":\"value-0\"}");
     }
 
     @Test
@@ -63,14 +64,14 @@ class RecordValueConverterTest {
                 SchemaBuilder.string(),
                 "some-key", recordSchema, "some-str-value", 1L);
 
-        assertEquals("some-str-value", recordValueConverter.convert(sinkRecord));
+        assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("some-str-value");
     }
 
     @Test
     void convertHashMapRecord() {
         final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA);
 
-        final Map value = new HashMap();
+        final Map<String, String> value = new HashMap<>();
         value.put("key", "value");
 
         final var sinkRecord = new SinkRecord(
@@ -78,19 +79,20 @@ class RecordValueConverterTest {
                 SchemaBuilder.string(),
                 "some-key", recordSchema, value, 1L);
 
-        assertEquals("{\"key\":\"value\"}", recordValueConverter.convert(sinkRecord));
+        assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("{\"key\":\"value\"}");
     }
 
 
     @Test
-    void throwsDataExceptionForUknownRecordValueClass() {
+    void throwsDataExceptionForUnknownRecordValueClass() {
         final var recordSchema = SchemaBuilder.int64();
         final var sinkRecord = new SinkRecord(
                 "some-topic", 0,
                 SchemaBuilder.string(), "some-key",
                 recordSchema, 42L, 1L);
 
-        assertThrows(DataException.class, () -> recordValueConverter.convert(sinkRecord));
+        assertThatExceptionOfType(DataException.class)
+                .isThrownBy(() -> recordValueConverter.convert(sinkRecord)).isInstanceOf(DataException.class);
     }
 
 }
