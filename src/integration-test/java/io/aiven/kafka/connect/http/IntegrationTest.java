@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -77,8 +78,13 @@ final class IntegrationTest {
 
     private static File pluginsDir;
 
+    private static final String DEFAULT_TAG = "5.4.3";
+
+    private static final DockerImageName DEFAULT_IMAGE_NAME =
+            DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);
+
     @Container
-    private final KafkaContainer kafka = new KafkaContainer()
+    private final KafkaContainer kafka = new KafkaContainer(DEFAULT_IMAGE_NAME)
         .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
 
     private AdminClient adminClient;
