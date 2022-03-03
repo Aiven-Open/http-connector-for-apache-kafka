@@ -14,7 +14,7 @@ The connector supports:
 - batching;
 - delivery retries.
 
-An example of configuration:  
+An example of configuration:
 
 ```json
 {
