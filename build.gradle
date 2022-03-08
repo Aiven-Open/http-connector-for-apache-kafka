@@ -69,7 +69,7 @@ ext {
     avroVersion = "1.8.1" // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
     confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
     hamcrestVersion = "2.2"
-    jacksonVersion = "2.13.1" // This Jackson is used in the tests.
+    jacksonVersion = "2.13.2" // This Jackson is used in the tests.
     jupiterVersion = "5.8.2"
     kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
     jettyVersion = "9.4.11.v20180605"
