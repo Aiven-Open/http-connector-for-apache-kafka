@@ -14,6 +14,25 @@ The connector supports:
 - batching;
 - delivery retries.
 
+An example of configuration:
+
+```json
+{
+  "name": "http-sink-test",
+  "config": {
+    "connector.class": "io.aiven.kafka.connect.http.HttpSinkConnector",
+    "topics.regex": "domain_a.*",
+    "http.authorization.type": "none",
+    "http.url": "http://httpmockserver:1080",
+    "batching.enabled": true,
+    "batch.max.size": 2,
+    "tasks.max": "1",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter"
+  }
+}
+```
+
 See the [configuration options](docs/sink-connector-config-options.rst) for details.
 
 ## Development
