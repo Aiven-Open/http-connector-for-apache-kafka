@@ -34,7 +34,7 @@ plugins {
     id "nebula.lint" version "17.5.0"
 
     // https://plugins.gradle.org/plugin/com.github.spotbugs
-    id "com.github.spotbugs" version "4.8.0"
+    id "com.github.spotbugs" version "5.0.6"
 
     // https://plugins.gradle.org/plugin/com.diffplug.gradle.spotless
     id "com.diffplug.spotless" version "6.3.0"
