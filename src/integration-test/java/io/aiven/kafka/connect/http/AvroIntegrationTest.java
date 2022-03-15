@@ -56,8 +56,14 @@ import org.testcontainers.utility.DockerImageName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Testcontainers
 public class AvroIntegrationTest {
+
+    private static final Logger log = LoggerFactory.getLogger(AvroIntegrationTest.class);
+
     private static final String HTTP_PATH = "/send-data-here";
     private static final String AUTHORIZATION = "Bearer some-token";
     private static final String CONTENT_TYPE = "application/json";
@@ -84,7 +90,7 @@ public class AvroIntegrationTest {
             DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);
 
     @Container
-    private final KafkaContainer kafka = new KafkaContainer(DEFAULT_IMAGE_NAME)
+    private final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
             .withNetwork(Network.newNetwork())
             .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
 
@@ -122,6 +128,7 @@ public class AvroIntegrationTest {
 
         final Properties adminClientConfig = new Properties();
         adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
+
         adminClient = AdminClient.create(adminClientConfig);
 
         final Map<String, Object> producerProps = Map.of(

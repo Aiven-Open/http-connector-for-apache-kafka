@@ -78,7 +78,7 @@ final class IntegrationTest {
             DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);
 
     @Container
-    private final KafkaContainer kafka = new KafkaContainer(DEFAULT_IMAGE_NAME)
+    private final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
         .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
 
     private AdminClient adminClient;

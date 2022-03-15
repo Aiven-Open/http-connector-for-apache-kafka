@@ -65,9 +65,7 @@ final class ConnectRunner {
         // These don't matter much (each connector sets its own converters), but need to be filled with valid classes.
         workerProps.put("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
         workerProps.put("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
-        workerProps.put("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("internal.key.converter.schemas.enable", "false");
-        workerProps.put("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("internal.value.converter.schemas.enable", "false");
 
         // Don't need it since we'll memory MemoryOffsetBackingStore.
@@ -90,6 +88,7 @@ final class ConnectRunner {
         herder = new StandaloneHerder(worker, "cluster-id", allConnectorClientConfigOverridePolicy);
 
         final RestServer rest = new RestServer(config);
+        rest.initializeServer();
 
         connect = new Connect(herder, rest);
 

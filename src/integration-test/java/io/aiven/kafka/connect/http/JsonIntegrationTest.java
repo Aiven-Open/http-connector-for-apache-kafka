@@ -53,6 +53,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 @Testcontainers
 public class JsonIntegrationTest {
@@ -75,7 +76,7 @@ public class JsonIntegrationTest {
             DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);
 
     @Container
-    private final KafkaContainer kafka = new KafkaContainer(DEFAULT_IMAGE_NAME)
+    private final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
             .withNetwork(Network.newNetwork())
             .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
 
