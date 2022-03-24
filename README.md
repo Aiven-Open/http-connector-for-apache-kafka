@@ -4,6 +4,10 @@
 
 This is a sink [Apache Kafka Connect](https://kafka.apache.org/documentation/#connect) connector that sends Kafka records over HTTP.
 
+## Status
+
+We consider the connector **stable** despite the major version is currently 0.
+
 ## How it works
 
 The connector uses the POST HTTP method to deliver records.
