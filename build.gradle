@@ -37,7 +37,7 @@ plugins {
     id "com.github.spotbugs" version "5.0.6"
 
     // https://plugins.gradle.org/plugin/com.diffplug.gradle.spotless
-    id "com.diffplug.spotless" version "6.3.0"
+    id "com.diffplug.spotless" version "6.4.0"
 }
 
 repositories {
