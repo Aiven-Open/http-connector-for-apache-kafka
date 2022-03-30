@@ -66,12 +66,12 @@ wrapper {
 ext {
     moduleName = "io.aiven.kafka.connect.http"
 
-    avroVersion = "1.8.1" // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
-    confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
+    avroVersion = "1.11.0" // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
+    confluentPlatformVersion = "7.0.1" // For compatibility tests use version 4.1.4.
     hamcrestVersion = "2.2"
     jacksonVersion = "2.13.2" // This Jackson is used in the tests.
     jupiterVersion = "5.8.2"
-    kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
+    kafkaVersion = "3.1.0" // Oldest version supported, new versions are backwards compatible.
     jettyVersion = "9.4.11.v20180605"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
@@ -123,7 +123,7 @@ dependencies {
     compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
     compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
 
-    implementation "org.apache.kafka:kafka-clients:$kafkaVersion"
+    compileOnly "org.apache.kafka:kafka-clients:$kafkaVersion"
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation "org.slf4j:slf4j-api:$slf4japiVersion"

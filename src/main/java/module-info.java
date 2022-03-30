@@ -5,4 +5,5 @@ module io.aiven.kafka.connect.http {
     requires static connect.api;
     requires com.fasterxml.jackson.databind;
     requires com.github.spotbugs.annotations;
+    requires connect.json;
 }
