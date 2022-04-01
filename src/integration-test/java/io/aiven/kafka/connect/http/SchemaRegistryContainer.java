@@ -24,7 +24,7 @@ final class SchemaRegistryContainer extends GenericContainer<SchemaRegistryConta
     public static final int SCHEMA_REGISTRY_PORT = 8081;
 
     public SchemaRegistryContainer(final KafkaContainer kafka) {
-        this("5.2.1", kafka);
+        this("5.0.4", kafka);
     }
 
     public SchemaRegistryContainer(final String confluentPlatformVersion, final KafkaContainer kafka) {
