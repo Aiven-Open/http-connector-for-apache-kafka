@@ -116,11 +116,11 @@ configurations {
 dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
     compileOnly "org.apache.kafka:connect-json:$kafkaVersion"
+    compileOnly "org.apache.kafka:kafka-clients:$kafkaVersion"
 
     // For Spotbugs suppressions
     compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
     compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
-    compileOnly "org.apache.kafka:kafka-clients:$kafkaVersion"
 
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
