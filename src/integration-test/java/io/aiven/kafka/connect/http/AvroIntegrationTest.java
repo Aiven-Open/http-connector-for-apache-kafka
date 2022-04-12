@@ -56,13 +56,8 @@ import org.testcontainers.utility.DockerImageName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 @Testcontainers
 public class AvroIntegrationTest {
-
-    private static final Logger log = LoggerFactory.getLogger(AvroIntegrationTest.class);
 
     private static final String HTTP_PATH = "/send-data-here";
     private static final String AUTHORIZATION = "Bearer some-token";
