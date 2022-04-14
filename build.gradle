@@ -80,7 +80,7 @@ ext {
     servletVersion = "4.0.1"
     slf4japiVersion = "1.7.36"
     spotbugsAnnotationsVersion = "4.6.0"
-    testcontainersVersion = '1.17.0'
+    testcontainersVersion = '1.17.1'
     assertjVersion = "3.22.0"
     awaitilityVersion = "4.2.0"
 }
