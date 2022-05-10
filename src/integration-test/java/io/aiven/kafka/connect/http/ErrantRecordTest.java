@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy and http-connector-for-apache-kafka project contributors
+ * Copyright 2022 Aiven Oy and http-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@ final class ErrantRecordTest {
     private static final String HTTP_PATH = "/send-data-here";
     private static final String AUTHORIZATION = "Bearer some-token";
     private static final String CONTENT_TYPE = "application/json";
-    private static final String CONTENT_TYPE_HEADER = "Content-Type";
 
     private static final String CONNECTOR_NAME = "test-source-connector";
 
@@ -86,7 +85,7 @@ final class ErrantRecordTest {
 
     private static File pluginsDir;
 
-    private static final String DEFAULT_TAG = "5.4.3";
+    private static final String DEFAULT_TAG = "6.2.2";
 
     private static final DockerImageName DEFAULT_IMAGE_NAME =
             DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);
@@ -98,7 +97,7 @@ final class ErrantRecordTest {
 
     private AdminClient adminClient;
     private KafkaProducer<String, Record> producer;
-    private KafkaConsumer<String, Record> consumer;
+    private KafkaConsumer<String, String> consumer;
 
     private ConnectRunner connectRunner;
 
@@ -219,9 +218,9 @@ final class ErrantRecordTest {
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers(),
             ConsumerConfig.GROUP_ID_CONFIG, "kafka-connect-httpsink-test",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-            "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "org.apache.kafka.common.serialization.StringDeserializer",
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-            "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "org.apache.kafka.common.serialization.StringDeserializer",
             ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1",
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"
         );
@@ -267,7 +266,7 @@ final class ErrantRecordTest {
         final List<String> dlqBodies = new ArrayList<>();
 
         while (noRecordsCount < readConsumerRetries) {
-            final ConsumerRecords<String, Record> consumerRecords = 
+            final ConsumerRecords<String, String> consumerRecords =
                     consumer.poll(Duration.ofMillis(100));
 
             if (consumerRecords.count() == 0) {
@@ -275,15 +274,16 @@ final class ErrantRecordTest {
                 continue;
             }
 
-            for (final ConsumerRecord<String, Record> record : consumerRecords) {
-                dlqBodies.add(String.format(JSON_PATTERN, record.key(), record.value()));
+            for (final ConsumerRecord<String, String> record : consumerRecords) {
+                // the message value is a json string and that is what we are comparing
+                dlqBodies.add(record.value());
             }
             consumer.commitAsync();
         }
         consumer.close();
 
         // checking that all failed messages were on the DLQ
-        assertThat(errantBodies.containsAll(dlqBodies));
+        assertThat(errantBodies).containsExactlyInAnyOrderElementsOf(dlqBodies);
 
         log.info("There were {} failed HTTP requests were expected, {} were found on the DLQ",
             errantBodies.size(), dlqBodies.size());
@@ -324,10 +324,6 @@ final class ErrantRecordTest {
         public Record(final String record, final String recordValue) {
             this.record = record;
             this.recordValue = recordValue;
-        }
-
-        public String getRecordValue() {
-            return this.recordValue;
         }
     }
 

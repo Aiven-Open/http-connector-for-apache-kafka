@@ -38,10 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.from;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class HttpSinkConfigTest {
 
@@ -544,12 +540,10 @@ final class HttpSinkConfigTest {
                 "errors.tolerance", "all"
         );
 
-        final var batchingAndErrorsToleranceE =
-                assertThrows(ConfigException.class, () -> new HttpSinkConfig(properties));
-
-        assertEquals(
-                "Cannot use errors.tolerance when batching is enabled",
-                        batchingAndErrorsToleranceE.getMessage());
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Cannot use errors.tolerance when batching is enabled")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Cannot use errors.tolerance when batching is enabled");
     }
 
     @Test
@@ -564,7 +558,7 @@ final class HttpSinkConfigTest {
         );
 
         var config = new HttpSinkConfig(properties);
-        assertFalse(config.batchingEnabled());
+        assertThat(config.batchingEnabled()).isFalse();
 
         properties = Map.of(
                 "http.url", "http://localhost:8090",
@@ -573,7 +567,7 @@ final class HttpSinkConfigTest {
         );
 
         config = new HttpSinkConfig(properties);
-        assertTrue(config.batchingEnabled());
+        assertThat(config.batchingEnabled()).isTrue();
 
         properties = Map.of(
                 "http.url", "http://localhost:8090",
@@ -583,6 +577,6 @@ final class HttpSinkConfigTest {
         );
 
         config = new HttpSinkConfig(properties);
-        assertTrue(config.batchingEnabled());
+        assertThat(config.batchingEnabled()).isTrue();
     }
 }

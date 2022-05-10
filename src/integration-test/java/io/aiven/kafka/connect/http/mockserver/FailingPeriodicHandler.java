@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Aiven Oy and http-connector-for-apache-kafka project contributors
+ * Copyright 2022 Aiven Oy and http-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.aiven.kafka.connect.http.mockserver;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -44,7 +43,7 @@ public final class FailingPeriodicHandler extends AbstractHandler {
     public void handle(final String target,
                        final Request baseRequest,
                        final HttpServletRequest request,
-                       final HttpServletResponse response) throws IOException, ServletException {
+                       final HttpServletResponse response) throws IOException {
         if (requestCounter % requestFailPeriod == 0) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } else {

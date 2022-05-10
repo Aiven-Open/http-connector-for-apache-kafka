@@ -72,13 +72,13 @@ final class IntegrationTest {
 
     private static File pluginsDir;
 
-    private static final String DEFAULT_TAG = "5.4.3";
+    private static final String DEFAULT_TAG = "6.2.2";
 
     private static final DockerImageName DEFAULT_IMAGE_NAME =
             DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);
 
     @Container
-    private final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
+    private final KafkaContainer kafka = new KafkaContainer(DEFAULT_IMAGE_NAME)
         .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
 
     private AdminClient adminClient;
