@@ -77,7 +77,7 @@ public final class HttpSinkTask extends SinkTask {
             reporter = context.errantRecordReporter();
         } catch (NoClassDefFoundError | NoSuchMethodError e) {
             // Will occur in Connect runtimes earlier than 2.6
-            log.warn("AK versions prior to 2.6 do not support the errant record reporter.");
+            log.warn("Apache Kafka versions prior to 2.6 do not support the errant record reporter.");
         }
     }
 
