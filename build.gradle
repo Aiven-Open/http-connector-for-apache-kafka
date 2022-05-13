@@ -66,14 +66,14 @@ wrapper {
 ext {
     moduleName = "io.aiven.kafka.connect.http"
 
-    avroVersion = "1.8.1" // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
+    avroVersion = "1.9.2" // Version 1.9.2 brings Jackson 2.10.2 package for Avro
     confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.0.2 to match Kafka 2.6.
                                        // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
     hamcrestVersion = "2.2"
     jacksonVersion = "2.13.2" // This Jackson is used in the tests.
     jupiterVersion = "5.8.2"
     kafkaVersion = '2.6.3'
-    jettyVersion = "9.4.45.v20220203"
+    jettyVersion = "9.4.39.v20210325"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
     log4jVersion = "2.17.2"
