@@ -36,4 +36,9 @@ final class SingleRecordSender extends RecordSender {
         }
     }
 
+    @Override
+    public void send(final SinkRecord record) {
+        final String body = recordValueConverter.convert(record);
+        httpSender.send(body);
+    }
 }

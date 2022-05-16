@@ -19,7 +19,7 @@
         "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
   <!-- Switch off these complexity metrics for integration tests, as in them we must instantiate many classes explicitly. -->
-  <suppress checks="ClassFanOutComplexity" files="(IntegrationTest|ConnectRunner).java" />
+  <suppress checks="ClassFanOutComplexity" files="(IntegrationTest|ConnectRunner|ErrantRecordTest).java" />
   <suppress checks="ClassDataAbstractionCoupling" files="(IntegrationTest|ConnectRunner).java" />
   <suppress checks="MethodLength" files="(HttpSinkConfig).java" />
   <suppress checks="CyclomaticComplexity" files="(HttpSinkConfig).java" />

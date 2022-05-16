@@ -69,7 +69,7 @@ public class JsonIntegrationTest {
 
     private static File pluginsDir;
 
-    private static final String DEFAULT_TAG = "5.4.3";
+    private static final String DEFAULT_TAG = "6.0.2";
 
     private static final DockerImageName DEFAULT_IMAGE_NAME =
             DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);

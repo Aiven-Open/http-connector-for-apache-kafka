@@ -20,7 +20,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 
@@ -36,6 +38,10 @@ public final class HttpSinkTask extends SinkTask {
 
     private HttpSender httpSender;
     private RecordSender recordSender;
+    private ErrantRecordReporter reporter;
+
+    // flag for legacy support (configured for batch mode, not using errors.tolerance)
+    private boolean useLegacySend;
 
     // required by Connect
     public HttpSinkTask() {
@@ -53,9 +59,25 @@ public final class HttpSinkTask extends SinkTask {
         if (this.httpSender == null) {
             this.httpSender = HttpSender.createHttpSender(config);
         }
+
         recordSender = RecordSender.createRecordSender(httpSender, config);
+
+        this.useLegacySend = config.batchingEnabled();
+
         if (Objects.nonNull(config.kafkaRetryBackoffMs())) {
             context.timeout(config.kafkaRetryBackoffMs());
+        }
+
+        try {
+            if (context.errantRecordReporter() == null) {
+                log.info("Errant record reporter not configured.");
+            }
+
+            // may be null if DLQ not enabled
+            reporter = context.errantRecordReporter();
+        } catch (NoClassDefFoundError | NoSuchMethodError e) {
+            // Will occur in Connect runtimes earlier than 2.6
+            log.warn("Apache Kafka versions prior to 2.6 do not support the errant record reporter.");
         }
     }
 
@@ -64,12 +86,34 @@ public final class HttpSinkTask extends SinkTask {
         log.debug("Received {} records", records.size());
 
         if (!records.isEmpty()) {
-            for (final SinkRecord record : records) {
-                if (record.value() == null) {
-                    throw new DataException("Record value must not be null");
+            // use the legacy send if batch is enabled
+            if (this.useLegacySend) {
+                for (final SinkRecord record : records) {
+                    if (record.value() == null) {
+                        throw new DataException("Record value must not be null");
+                    }
+                }
+
+                recordSender.send(records);
+            } else {
+                // send records to the sender one at a time
+                for (final SinkRecord record : records) {
+                    if (record.value() == null) {
+                        throw new DataException("Record value must not be null");
+                    }
+
+                    try {
+                        recordSender.send(record);
+                    } catch (final ConnectException e) {
+                        if (reporter != null) {
+                            reporter.report(record, e);
+                        } else {
+                            // otherwise, re-throw the exception
+                            throw new ConnectException(e.getMessage());
+                        }
+                    }
                 }
             }
-            recordSender.send(records);
         }
     }
 

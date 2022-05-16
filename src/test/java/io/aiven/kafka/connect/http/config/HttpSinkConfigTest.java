@@ -530,4 +530,53 @@ final class HttpSinkConfigTest {
         final var config = new HttpSinkConfig(properties);
         assertThat(config.httpTimeout()).isEqualTo(5);
     }
+
+    @Test
+    void invalidConfig() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "batching.enabled", "true",
+                "errors.tolerance", "all"
+        );
+
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Cannot use errors.tolerance when batching is enabled")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Cannot use errors.tolerance when batching is enabled");
+    }
+
+    @Test
+    void validBatchingConfig() {
+        Map<String, String> properties;
+
+        properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "batching.enabled", "false",
+                "errors.tolerance", "all"
+        );
+
+        var config = new HttpSinkConfig(properties);
+        assertThat(config.batchingEnabled()).isFalse();
+
+        properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "batching.enabled", "true"
+        );
+
+        config = new HttpSinkConfig(properties);
+        assertThat(config.batchingEnabled()).isTrue();
+
+        properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "batching.enabled", "true",
+                "errors.tolerance", "none"
+        );
+
+        config = new HttpSinkConfig(properties);
+        assertThat(config.batchingEnabled()).isTrue();
+    }
 }

@@ -72,12 +72,16 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public static final String NAME_CONFIG = "name";
 
+    private static final String ERRORS_GROUP = "Errors Handling";
+    private static final String ERRORS_TOLERANCE = "errors.tolerance";
+
     public static ConfigDef configDef() {
         final ConfigDef configDef = new ConfigDef();
         addConnectionConfigGroup(configDef);
         addBatchingConfigGroup(configDef);
         addRetriesConfigGroup(configDef);
         addTimeoutConfigGroup(configDef);
+        addErrorsConfigGroup(configDef);
         return configDef;
     }
 
@@ -464,6 +468,23 @@ public class HttpSinkConfig extends AbstractConfig {
         );
     }
 
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // Suppress groupCounter and groupCounter++
+    private static void addErrorsConfigGroup(final ConfigDef configDef) {
+        int groupCounter = 0;
+        configDef.define(
+            ERRORS_TOLERANCE,
+            ConfigDef.Type.STRING,
+            null,
+            ConfigDef.Importance.LOW,
+            "Optional errors.tolerance setting. Defaults to \"none\".",
+            ERRORS_GROUP,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            HTTP_TIMEOUT_CONFIG
+
+        );
+    }
+
     public HttpSinkConfig(final Map<String, String> properties) {
         super(configDef(), properties);
         validate();
@@ -515,6 +536,12 @@ public class HttpSinkConfig extends AbstractConfig {
             default:
                 break;
         }
+
+        // don't let configuration have both errors.tolerance=all and batching.enabled=true
+        if (batchingEnabled() && errorsTolerance().equalsIgnoreCase("all")) {
+            throw new ConfigException("Cannot use errors.tolerance when batching is enabled");
+        }
+
     }
 
     public final URI httpUri() {
@@ -550,6 +577,11 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final int batchMaxSize() {
         return getInt(BATCH_MAX_SIZE_CONFIG);
+    }
+
+    // currently just getting this for a configuration check
+    private final String errorsTolerance() {
+        return getString(ERRORS_TOLERANCE) != null ? getString(ERRORS_TOLERANCE) : "";
     }
 
     // White space is significant for our batch delimiters but ConfigKey trims it out

@@ -58,6 +58,7 @@ import static org.awaitility.Awaitility.await;
 
 @Testcontainers
 public class AvroIntegrationTest {
+
     private static final String HTTP_PATH = "/send-data-here";
     private static final String AUTHORIZATION = "Bearer some-token";
     private static final String CONTENT_TYPE = "application/json";
@@ -78,7 +79,7 @@ public class AvroIntegrationTest {
 
     private static File pluginsDir;
 
-    private static final String DEFAULT_TAG = "5.4.3";
+    private static final String DEFAULT_TAG = "6.0.2";
 
     private static final DockerImageName DEFAULT_IMAGE_NAME =
             DockerImageName.parse("confluentinc/cp-kafka").withTag(DEFAULT_TAG);
@@ -122,6 +123,7 @@ public class AvroIntegrationTest {
 
         final Properties adminClientConfig = new Properties();
         adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
+
         adminClient = AdminClient.create(adminClientConfig);
 
         final Map<String, Object> producerProps = Map.of(

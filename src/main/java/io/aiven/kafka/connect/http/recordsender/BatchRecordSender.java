@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import io.aiven.kafka.connect.http.sender.HttpSender;
@@ -59,6 +60,11 @@ final class BatchRecordSender extends RecordSender {
             final String body = createRequestBody(batch);
             httpSender.send(body);
         }
+    }
+
+    @Override
+    public void send(final SinkRecord record) {
+        throw new ConnectException("Don't call this method for batch sending");
     }
 
     private String createRequestBody(final Collection<SinkRecord> batch) {

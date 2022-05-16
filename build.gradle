@@ -66,13 +66,14 @@ wrapper {
 ext {
     moduleName = "io.aiven.kafka.connect.http"
 
-    avroVersion = "1.8.1" // Version 1.8.1 brings Jackson 1.9.x/org.codehaus.jackson package for Avro and Confluent Platform 4.1.4.
-    confluentPlatformVersion = "4.1.4" // For compatibility tests use version 4.1.4.
+    avroVersion = "1.9.2" // Version 1.9.2 brings Jackson 2.10.2 package for Avro
+    confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.0.2 to match Kafka 2.6.
+                                       // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
     hamcrestVersion = "2.2"
     jacksonVersion = "2.13.2" // This Jackson is used in the tests.
     jupiterVersion = "5.8.2"
-    kafkaVersion = "2.0.1" // Oldest version supported, new versions are backwards compatible.
-    jettyVersion = "9.4.11.v20180605"
+    kafkaVersion = '2.6.3'
+    jettyVersion = "9.4.39.v20210325"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
     log4jVersion = "2.17.2"
@@ -131,7 +132,6 @@ dependencies {
     testRuntimeOnly "org.apache.kafka:connect-json:$kafkaVersion"
     testRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter:$jupiterVersion"
-    testRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
 
     testImplementation "org.apache.kafka:connect-api:$kafkaVersion"
     testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"

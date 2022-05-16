@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.kafka.common.utils.Time;
+import org.apache.kafka.connect.connector.policy.AllConnectorClientConfigOverridePolicy;
 import org.apache.kafka.connect.runtime.Connect;
 import org.apache.kafka.connect.runtime.ConnectorConfig;
 import org.apache.kafka.connect.runtime.Herder;
@@ -64,9 +65,7 @@ final class ConnectRunner {
         // These don't matter much (each connector sets its own converters), but need to be filled with valid classes.
         workerProps.put("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
         workerProps.put("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
-        workerProps.put("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("internal.key.converter.schemas.enable", "false");
-        workerProps.put("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("internal.value.converter.schemas.enable", "false");
 
         // Don't need it since we'll memory MemoryOffsetBackingStore.
@@ -80,11 +79,16 @@ final class ConnectRunner {
         final Plugins plugins = new Plugins(workerProps);
         final StandaloneConfig config = new StandaloneConfig(workerProps);
 
+        final AllConnectorClientConfigOverridePolicy allConnectorClientConfigOverridePolicy = 
+                    new AllConnectorClientConfigOverridePolicy();
+
         final Worker worker = new Worker(
-            workerId, time, plugins, config, new MemoryOffsetBackingStore());
-        herder = new StandaloneHerder(worker, "cluster-id");
+            workerId, time, plugins, config, new MemoryOffsetBackingStore(),
+            allConnectorClientConfigOverridePolicy);
+        herder = new StandaloneHerder(worker, "cluster-id", allConnectorClientConfigOverridePolicy);
 
         final RestServer rest = new RestServer(config);
+        rest.initializeServer();
 
         connect = new Connect(herder, rest);
 
