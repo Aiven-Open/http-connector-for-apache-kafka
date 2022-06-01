@@ -82,7 +82,7 @@ ext {
     slf4japiVersion = "1.7.36"
     spotbugsAnnotationsVersion = "4.6.0"
     testcontainersVersion = '1.17.2'
-    assertjVersion = "3.22.0"
+    assertjVersion = "3.23.1"
     awaitilityVersion = "4.2.0"
 }
 
