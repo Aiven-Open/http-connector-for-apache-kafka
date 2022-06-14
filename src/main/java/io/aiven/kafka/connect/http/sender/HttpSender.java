@@ -23,6 +23,7 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.RetriableException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
@@ -93,11 +94,11 @@ public class HttpSender {
                 }
             } catch (final InterruptedException e) {
                 log.error("Sending failed due to InterruptedException, stopping", e);
-                throw new ConnectException(e);
+                throw new RetriableException(e);
             }
         }
         log.error("Sending failed and no retries remain, stopping");
-        throw new ConnectException("Sending failed and no retries remain, stopping");
+        throw new RetriableException("Sending failed and no retries remain, stopping");
     }
 
     public static HttpSender createHttpSender(final HttpSinkConfig config) {
