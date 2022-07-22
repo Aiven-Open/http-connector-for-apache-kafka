@@ -79,7 +79,7 @@ final class OAuth2HttpSender extends HttpSender {
                 throw new ConnectException("Couldn't get OAuth2 access token", e);
             }
         }
-        return requestBuilder.header(HttpRequestBuilder.HEADER_AUTHORIZATION, accessTokenAuthHeader);
+        return requestBuilder.setHeader(HttpRequestBuilder.HEADER_AUTHORIZATION, accessTokenAuthHeader);
     }
 
     private String buildAccessTokenAuthHeader(final String responseBody) throws JsonProcessingException {

@@ -240,6 +240,13 @@ class OAuth2HttpSenderTest {
                 .filteredOnAssertions(uri ->
                         assertThat(uri).hasToString("http://localhost:42/token"))
                 .hasSize(2);
+
+        assertThat(requestCaptor.getAllValues())
+                .filteredOnAssertions(req ->
+                        assertThat(req.uri()).hasToString("http://localhost:42"))
+                .allSatisfy(request ->
+                        assertThat(request.headers().allValues("Authorization")).hasSize(1));
+
     }
 
     @Test
