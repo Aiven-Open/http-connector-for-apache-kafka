@@ -76,7 +76,7 @@ ext {
     jettyVersion = "9.4.39.v20210325"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
-    log4jVersion = "2.17.2"
+    log4jVersion = "2.18.0"
     mockitoVersion = '4.6.1'
     servletVersion = "4.0.1"
     slf4japiVersion = "1.7.36"
