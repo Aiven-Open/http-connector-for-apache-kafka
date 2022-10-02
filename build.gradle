@@ -80,7 +80,7 @@ ext {
     mockitoVersion = '4.8.0'
     servletVersion = "4.0.1"
     slf4japiVersion = "1.7.36"
-    spotbugsAnnotationsVersion = "4.7.1"
+    spotbugsAnnotationsVersion = "4.7.2"
     testcontainersVersion = '1.17.4'
     assertjVersion = "3.23.1"
     awaitilityVersion = "4.2.0"
