@@ -71,7 +71,7 @@ ext {
                                        // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
     hamcrestVersion = "2.2"
     jacksonVersion = "2.14.1" // This Jackson is used in the tests.
-    jupiterVersion = "5.9.1"
+    jupiterVersion = "5.9.2"
     kafkaVersion = '2.6.3'
     jettyVersion = "9.4.39.v20210325"
     junit4Version = "4.13.2"
