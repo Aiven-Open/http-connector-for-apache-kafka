@@ -37,7 +37,7 @@ plugins {
     id "com.github.spotbugs" version "5.0.13"
 
     // https://plugins.gradle.org/plugin/com.diffplug.gradle.spotless
-    id "com.diffplug.spotless" version "6.12.0"
+    id "com.diffplug.spotless" version "6.16.0"
 }
 
 repositories {
@@ -70,19 +70,19 @@ ext {
     confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.0.2 to match Kafka 2.6.
                                        // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
     hamcrestVersion = "2.2"
-    jacksonVersion = "2.14.1" // This Jackson is used in the tests.
-    jupiterVersion = "5.9.1"
+    jacksonVersion = "2.14.2" // This Jackson is used in the tests.
+    jupiterVersion = "5.9.2"
     kafkaVersion = '2.6.3'
     jettyVersion = "9.4.39.v20210325"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
-    log4jVersion = "2.19.0"
-    mockitoVersion = '4.11.0'
+    log4jVersion = "2.20.0"
+    mockitoVersion = '5.1.1'
     servletVersion = "4.0.1"
     slf4japiVersion = "1.7.36"
     spotbugsAnnotationsVersion = "4.7.3"
     testcontainersVersion = '1.17.6'
-    assertjVersion = "3.23.1"
+    assertjVersion = "3.24.2"
     awaitilityVersion = "4.2.0"
 }
 
