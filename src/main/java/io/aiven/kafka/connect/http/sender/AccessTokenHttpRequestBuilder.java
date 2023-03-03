@@ -21,26 +21,27 @@ import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.Objects;
 import java.util.StringJoiner;
 
 import org.apache.kafka.connect.errors.ConnectException;
 
+import io.aiven.kafka.connect.http.config.AuthorizationType;
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
+import io.aiven.kafka.connect.http.sender.HttpRequestBuilder.OAuth2HttpRequestBuilder;
 
-class AccessTokenHttpRequestBuilder implements HttpRequestBuilder {
+class AccessTokenHttpRequestBuilder implements OAuth2HttpRequestBuilder {
 
     AccessTokenHttpRequestBuilder() {
     }
 
     @Override
     public HttpRequest.Builder build(final HttpSinkConfig config) {
-        Objects.requireNonNull(config, "config");
-        Objects.requireNonNull(config.oauth2AccessTokenUri(), "oauth2AccessTokenUri");
+        VALIDATE.accept(config, AuthorizationType.OAUTH2);
+
         final var accessTokenRequestBuilder = HttpRequest
-                        .newBuilder(config.oauth2AccessTokenUri())
-                        .timeout(Duration.ofSeconds(config.httpTimeout()))
-                        .header(HEADER_CONTENT_TYPE, "application/x-www-form-urlencoded");
+                .newBuilder(config.oauth2AccessTokenUri())
+                .timeout(Duration.ofSeconds(config.httpTimeout()))
+                .header(HEADER_CONTENT_TYPE, HEADER_CONTENT_TYPE_FORM);
 
         final var accessTokenRequestBodyBuilder = new StringJoiner("&");
         accessTokenRequestBodyBuilder.add(encodeNameAndValue("grant_type", "client_credentials"));

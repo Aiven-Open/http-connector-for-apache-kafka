@@ -68,7 +68,6 @@ final class HttpSinkConfigTest {
                 .returns(1, from(HttpSinkConfig::maxRetries))
                 .returns(3000, from(HttpSinkConfig::retryBackoffMs))
                 .returns(Collections.emptyMap(), from(HttpSinkConfig::getAdditionalHeaders))
-                .returns(null, from(HttpSinkConfig::oauth2AccessTokenUri))
                 .returns(null, from(HttpSinkConfig::oauth2ClientId))
                 .returns(null, from(HttpSinkConfig::oauth2ClientSecret))
                 .returns(null, from(HttpSinkConfig::oauth2ClientScope))
@@ -120,22 +119,24 @@ final class HttpSinkConfigTest {
                         + "supported values are: [HEADER, URL]");
     }
 
-    @Test
-    void invalidOAuth2Configuration() {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"OAUTH2", "APIKEY"})
+    void invalidOAuth2Configuration(final String input) {
         final var noAccessTokenUrlConfig = Map.of(
                 "http.url", "http://localhost:8090",
-                "http.authorization.type", "oauth2"
+                "http.authorization.type", input.toLowerCase()
         );
 
         assertThatExceptionOfType(ConfigException.class)
                 .describedAs("Expected config exception due to missing OAuth access token URL")
                 .isThrownBy(() -> new HttpSinkConfig(noAccessTokenUrlConfig))
                 .withMessage("Invalid value null for configuration oauth2.access.token.url: "
-                        + "Must be present when http.headers.content.type = OAUTH2");
+                        + "Must be present when http.headers.content.type = " + input);
 
         final var noSecretIdConfig = Map.of(
                 "http.url", "http://localhost:8090",
-                "http.authorization.type", "oauth2",
+                "http.authorization.type", input.toLowerCase(),
                 "oauth2.access.token.url", "http://localhost:8090/token"
         );
 
@@ -143,11 +144,11 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to missing OAuth client id")
                 .isThrownBy(() -> new HttpSinkConfig(noSecretIdConfig))
                 .withMessage("Invalid value null for configuration oauth2.client.id: "
-                        + "Must be present when http.headers.content.type = OAUTH2");
+                        + "Must be present when http.headers.content.type = " + input);
 
         final var noSecretConfig = Map.of(
                 "http.url", "http://localhost:8090",
-                "http.authorization.type", "oauth2",
+                "http.authorization.type", input.toLowerCase(),
                 "oauth2.access.token.url", "http://localhost:8090/token",
                 "oauth2.client.id", "client_id"
         );
@@ -156,7 +157,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to missing OAuth client secret")
                 .isThrownBy(() -> new HttpSinkConfig(noSecretConfig))
                 .withMessage("Invalid value null for configuration oauth2.client.secret: "
-                        + "Must be present when http.headers.content.type = OAUTH2");
+                        + "Must be present when http.headers.content.type = " + input);
     }
 
     @Test
@@ -263,6 +264,14 @@ final class HttpSinkConfigTest {
                                 "oauth2.access.token.url", "http://localhost:42",
                                 "oauth2.client.id", "client_id",
                                 "oauth2.client.secret", "client_secret"
+                        )),
+                Arguments.of(AuthorizationType.APIKEY,
+                        Map.of(
+                                "http.url", "http://localhost:8090",
+                                "http.authorization.type", AuthorizationType.APIKEY.name,
+                                "oauth2.access.token.url", "http://localhost:42",
+                                "oauth2.client.id", "key",
+                                "oauth2.client.secret", "secret"
                         ))
         );
     }
@@ -278,7 +287,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to unsupported authorization type")
                 .isThrownBy(() -> new HttpSinkConfig(properties))
                 .withMessage("Invalid value unsupported for configuration http.authorization.type: "
-                        + "supported values are: [none, oauth2, static]");
+                        + "supported values are: [none, oauth2, static, apikey]");
     }
 
     @Test

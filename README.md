@@ -13,7 +13,7 @@ We consider the connector **stable** despite the major version is currently 0.
 The connector uses the POST HTTP method to deliver records.
 
 The connector supports:
-- authorization (static, OAuth2);
+- authorization (static, OAuth2, Apikey);
 - setting HTTP headers;
 - batching;
 - delivery retries.

@@ -52,7 +52,6 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
     private static final String OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG = "oauth2.response.token.property";
-
     private static final String BATCHING_GROUP = "Batching";
     private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
     private static final String BATCH_MAX_SIZE_CONFIG = "batch.max.size";
@@ -491,36 +490,38 @@ public class HttpSinkConfig extends AbstractConfig {
     }
 
     private void validate() {
-        switch (authorizationType()) {
+        final AuthorizationType authorizationType = authorizationType();
+        switch (authorizationType) {
             case STATIC:
                 if (headerAuthorization() == null || headerAuthorization().isBlank()) {
                     throw new ConfigException(
                         HTTP_HEADERS_AUTHORIZATION_CONFIG,
                         getPassword(HTTP_HEADERS_AUTHORIZATION_CONFIG),
-                        "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                            + " = " + AuthorizationType.STATIC);
+                            "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
+                            + " = " + authorizationType);
                 }
                 break;
             case OAUTH2:
-                if (oauth2AccessTokenUri() == null) {
+            case APIKEY:
+                if (getString(OAUTH2_ACCESS_TOKEN_URL_CONFIG) == null) {
                     throw new ConfigException(
                             OAUTH2_ACCESS_TOKEN_URL_CONFIG, getString(OAUTH2_ACCESS_TOKEN_URL_CONFIG),
                             "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                                    + " = " + AuthorizationType.OAUTH2);
+                            + " = " + authorizationType);
                 }
                 if (oauth2ClientId() == null || oauth2ClientId().isEmpty()) {
                     throw new ConfigException(
                             OAUTH2_CLIENT_ID_CONFIG,
                             getString(OAUTH2_CLIENT_ID_CONFIG),
                             "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                                    + " = " + AuthorizationType.OAUTH2);
+                            + " = " + authorizationType);
                 }
                 if (oauth2ClientSecret() == null || oauth2ClientSecret().value().isEmpty()) {
                     throw new ConfigException(
                             OAUTH2_CLIENT_SECRET_CONFIG,
                             getPassword(OAUTH2_CLIENT_SECRET_CONFIG),
                             "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                                    + " = " + AuthorizationType.OAUTH2);
+                            + " = " + authorizationType);
                 }
                 break;
             case NONE:
@@ -620,14 +621,14 @@ public class HttpSinkConfig extends AbstractConfig {
     }
 
     public final URI oauth2AccessTokenUri() {
-        return getString(OAUTH2_ACCESS_TOKEN_URL_CONFIG) != null ? toURI(OAUTH2_ACCESS_TOKEN_URL_CONFIG) : null;
+        return toURI(OAUTH2_ACCESS_TOKEN_URL_CONFIG);
     }
 
     private URI toURI(final String propertyName) {
         try {
             return new URL(getString(propertyName)).toURI();
         } catch (final MalformedURLException | URISyntaxException e) {
-            throw new ConnectException(e);
+            throw new ConnectException(String.format("Could not retrieve proper URI from %s", propertyName), e);
         }
     }
 

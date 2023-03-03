@@ -29,6 +29,7 @@ import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class HttpSender {
 
     private static final Logger log = LoggerFactory.getLogger(HttpSender.class);
@@ -40,7 +41,7 @@ public class HttpSender {
     private final HttpRequestBuilder httpRequestBuilder;
 
     protected HttpSender(final HttpSinkConfig config) {
-        this(config, HttpRequestBuilder.DEFAULT_HTTP_REQUEST_BUILDER, HttpClient.newHttpClient());
+        this(config, HttpRequestBuilder.DEFAULT_HTTP_REQUEST_BUILDER);
     }
 
     protected HttpSender(final HttpSinkConfig config,
@@ -107,7 +108,9 @@ public class HttpSender {
             case STATIC:
                 return new HttpSender(config, HttpRequestBuilder.AUTH_HTTP_REQUEST_BUILDER);
             case OAUTH2:
-                return new OAuth2HttpSender(config);
+                return new OAuth2HttpSender(config, new AccessTokenHttpRequestBuilder());
+            case APIKEY:
+                return new OAuth2HttpSender(config, new ApiKeyAccessTokenHttpRequestBuilder());
             default:
                 throw new ConnectException("Can't create HTTP sender for auth type: " + config.authorizationType());
         }

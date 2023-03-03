@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
+import io.aiven.kafka.connect.http.sender.HttpRequestBuilder.OAuth2HttpRequestBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -40,13 +41,17 @@ final class OAuth2HttpSender extends HttpSender {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    OAuth2HttpSender(final HttpSinkConfig config) {
+    private final OAuth2HttpRequestBuilder oauth2HttpRequestBuilder;
+
+    OAuth2HttpSender(final HttpSinkConfig config, final OAuth2HttpRequestBuilder accessTokenRequestBuilder) {
         super(config);
+        this.oauth2HttpRequestBuilder = accessTokenRequestBuilder;
     }
 
     //for testing
     OAuth2HttpSender(final HttpSinkConfig config, final HttpClient httpClient) {
         super(config, httpClient);
+        this.oauth2HttpRequestBuilder = new AccessTokenHttpRequestBuilder();
     }
 
     @Override
@@ -71,7 +76,7 @@ final class OAuth2HttpSender extends HttpSender {
             try {
                 final var response =
                         super.sendWithRetries(
-                                new AccessTokenHttpRequestBuilder().build(config),
+                                oauth2HttpRequestBuilder.build(config),
                                 HttpResponseHandler.ON_HTTP_ERROR_RESPONSE_HANDLER
                         );
                 accessTokenAuthHeader = buildAccessTokenAuthHeader(response.body());

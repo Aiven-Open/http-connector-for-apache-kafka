@@ -18,7 +18,10 @@ package io.aiven.kafka.connect.http.sender;
 
 import java.net.http.HttpRequest;
 import java.time.Duration;
+import java.util.Objects;
+import java.util.function.BiConsumer;
 
+import io.aiven.kafka.connect.http.config.AuthorizationType;
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
 interface HttpRequestBuilder {
@@ -42,4 +45,14 @@ interface HttpRequestBuilder {
     HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = config -> DEFAULT_HTTP_REQUEST_BUILDER.build(config)
             .header(HEADER_AUTHORIZATION, config.headerAuthorization());
 
+    interface OAuth2HttpRequestBuilder extends HttpRequestBuilder {
+        String HEADER_CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
+        BiConsumer<HttpSinkConfig, AuthorizationType> VALIDATE = (httpSinkConfig, authorizationType) -> {
+            Objects.requireNonNull(httpSinkConfig, "config should not be null");
+            if (httpSinkConfig.authorizationType() != authorizationType) {
+                throw new IllegalArgumentException(String.format("The expected authorization type is %s",
+                        authorizationType.name));
+            }
+        };
+    }
 }
