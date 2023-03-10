@@ -31,7 +31,7 @@ plugins {
     id 'idea'
 
     // https://plugins.gradle.org/plugin/nebula.lint
-    id "nebula.lint" version "17.7.1"
+    id "nebula.lint" version "18.0.3"
 
     // https://plugins.gradle.org/plugin/com.github.spotbugs
     id "com.github.spotbugs" version "5.0.13"
