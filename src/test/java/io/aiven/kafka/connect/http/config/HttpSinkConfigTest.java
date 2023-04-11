@@ -71,6 +71,7 @@ final class HttpSinkConfigTest {
                 .returns(null, from(HttpSinkConfig::oauth2AccessTokenUri))
                 .returns(null, from(HttpSinkConfig::oauth2ClientId))
                 .returns(null, from(HttpSinkConfig::oauth2ClientSecret))
+                .returns(null, from(HttpSinkConfig::oauth2ClientAudience))
                 .returns(null, from(HttpSinkConfig::oauth2ClientScope))
                 .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
                 .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty))
@@ -176,6 +177,7 @@ final class HttpSinkConfigTest {
                 .returns(new URI("http://localhost:8090/token"), from(HttpSinkConfig::oauth2AccessTokenUri))
                 .returns("client_id", from(HttpSinkConfig::oauth2ClientId))
                 .returns("client_secret", from(httpSinkConfig -> httpSinkConfig.oauth2ClientSecret().value()))
+                .returns(null, from(HttpSinkConfig::oauth2ClientAudience))
                 .returns(null, from(HttpSinkConfig::oauth2ClientScope))
                 .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
                 .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty));
@@ -191,6 +193,7 @@ final class HttpSinkConfigTest {
                 "oauth2.client.id", "client_id",
                 "oauth2.client.secret", "client_secret",
                 "oauth2.client.authorization.mode", "url",
+                "oauth2.client.audience", "http://localhost:8000/api",
                 "oauth2.client.scope", "scope1,scope2",
                 "oauth2.response.token.property", "moooooo"
         );
@@ -201,6 +204,7 @@ final class HttpSinkConfigTest {
                 .returns(new URI("http://localhost:8090/token"), from(HttpSinkConfig::oauth2AccessTokenUri))
                 .returns("client_id", from(HttpSinkConfig::oauth2ClientId))
                 .returns("client_secret", from(httpSinkConfig -> httpSinkConfig.oauth2ClientSecret().value()))
+                .returns("http://localhost:8000/api", from(HttpSinkConfig::oauth2ClientAudience))
                 .returns("scope1,scope2", from(HttpSinkConfig::oauth2ClientScope))
                 .returns(OAuth2AuthorizationMode.URL, from(HttpSinkConfig::oauth2AuthorizationMode))
                 .returns("moooooo", from(HttpSinkConfig::oauth2ResponseTokenProperty));

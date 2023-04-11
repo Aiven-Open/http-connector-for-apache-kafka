@@ -50,6 +50,7 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String OAUTH2_CLIENT_ID_CONFIG = "oauth2.client.id";
     private static final String OAUTH2_CLIENT_SECRET_CONFIG = "oauth2.client.secret";
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
+    private static final String OAUTH2_CLIENT_AUDIENCE_CONFIG = "oauth2.client.audience";
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
     private static final String OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG = "oauth2.response.token.property";
 
@@ -199,8 +200,8 @@ public class HttpSinkConfig extends AbstractConfig {
                 ConfigDef.Width.LONG,
                 OAUTH2_ACCESS_TOKEN_URL_CONFIG,
                 List.of(OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
-                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG,
-                        OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_AUDIENCE_CONFIG,
+                        OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_ID_CONFIG,
@@ -219,7 +220,7 @@ public class HttpSinkConfig extends AbstractConfig {
                 ConfigDef.Width.LONG,
                 OAUTH2_CLIENT_ID_CONFIG,
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
-                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_AUDIENCE_CONFIG,
                         OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
@@ -233,7 +234,7 @@ public class HttpSinkConfig extends AbstractConfig {
                 ConfigDef.Width.LONG,
                 OAUTH2_CLIENT_SECRET_CONFIG,
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG,
-                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_AUDIENCE_CONFIG,
                         OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
@@ -273,7 +274,28 @@ public class HttpSinkConfig extends AbstractConfig {
                 ConfigDef.Width.LONG,
                 OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
-                        OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
+                        OAUTH2_CLIENT_AUDIENCE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG,
+                        OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
+        );
+                configDef.define(
+                OAUTH2_CLIENT_AUDIENCE_CONFIG,
+                ConfigDef.Type.STRING,
+                null,
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 client audience";
+                    }
+                },
+                ConfigDef.Importance.LOW,
+                "The audience used for fetching an access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_CLIENT_AUDIENCE_CONFIG,
+                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG,
+                OAUTH2_CLIENT_SECRET_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG,
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_SCOPE_CONFIG,
@@ -291,7 +313,8 @@ public class HttpSinkConfig extends AbstractConfig {
                 groupCounter++,
                 ConfigDef.Width.LONG,
                 OAUTH2_CLIENT_SCOPE_CONFIG,
-                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG,
+                OAUTH2_CLIENT_SECRET_CONFIG, OAUTH2_CLIENT_AUDIENCE_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
         configDef.define(
@@ -312,7 +335,8 @@ public class HttpSinkConfig extends AbstractConfig {
                 ConfigDef.Width.LONG,
                 OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG,
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
-                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG)
+                        OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_AUDIENCE_CONFIG,
+                        OAUTH2_CLIENT_SCOPE_CONFIG)
         );
     }
 
@@ -641,6 +665,10 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final OAuth2AuthorizationMode oauth2AuthorizationMode() {
         return OAuth2AuthorizationMode.valueOf(getString(OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG).toUpperCase());
+    }
+
+    public final String oauth2ClientAudience() {
+        return getString(OAUTH2_CLIENT_AUDIENCE_CONFIG);
     }
 
     public final String oauth2ClientScope() {

@@ -47,6 +47,10 @@ class AccessTokenHttpRequestBuilder implements HttpRequestBuilder {
         if (config.oauth2ClientScope() != null) {
             accessTokenRequestBodyBuilder.add(encodeNameAndValue("scope", config.oauth2ClientScope()));
         }
+        if (config.oauth2ClientAudience() != null) {
+            accessTokenRequestBodyBuilder.add(encodeNameAndValue("audience", config
+            .oauth2ClientAudience()));
+        }
 
         setClientIdAndSecret(accessTokenRequestBuilder, accessTokenRequestBodyBuilder, config);
         return accessTokenRequestBuilder
