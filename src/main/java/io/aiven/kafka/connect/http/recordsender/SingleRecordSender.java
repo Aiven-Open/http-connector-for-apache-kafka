@@ -22,23 +22,28 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import io.aiven.kafka.connect.http.sender.HttpSender;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 final class SingleRecordSender extends RecordSender {
 
-    protected SingleRecordSender(final HttpSender httpSender) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SingleRecordSender.class);
+
+    SingleRecordSender(final HttpSender httpSender) {
         super(httpSender);
     }
 
     @Override
     public void send(final Collection<SinkRecord> records) {
         for (final SinkRecord record : records) {
-            final String body = recordValueConverter.convert(record);
-            httpSender.send(body);
+            this.send(record);
         }
     }
 
     @Override
     public void send(final SinkRecord record) {
         final String body = recordValueConverter.convert(record);
+        LOGGER.trace("Record value: {}", body);
         httpSender.send(body);
     }
 }

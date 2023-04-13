@@ -25,9 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -47,12 +49,15 @@ public class HttpSinkConfig extends AbstractConfig {
     public static final String KAFKA_RETRY_BACKOFF_MS_CONFIG = "kafka.retry.backoff.ms";
 
     private static final String OAUTH2_ACCESS_TOKEN_URL_CONFIG = "oauth2.access.token.url";
+    private static final String OAUTH2_GRANT_TYPE_KEY_CONFIG = "oauth2.grant_type.key";
+    private static final String OAUTH2_GRANT_TYPE_CONFIG = "oauth2.grant_type";
+    private static final String OAUTH2_CLIENT_ID_KEY_CONFIG = "oauth2.client.id.key";
     private static final String OAUTH2_CLIENT_ID_CONFIG = "oauth2.client.id";
+    private static final String OAUTH2_CLIENT_SECRET_KEY_CONFIG = "oauth2.client.secret.key";
     private static final String OAUTH2_CLIENT_SECRET_CONFIG = "oauth2.client.secret";
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
     private static final String OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG = "oauth2.response.token.property";
-
     private static final String BATCHING_GROUP = "Batching";
     private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
     private static final String BATCH_MAX_SIZE_CONFIG = "batch.max.size";
@@ -198,9 +203,64 @@ public class HttpSinkConfig extends AbstractConfig {
                 groupCounter++,
                 ConfigDef.Width.LONG,
                 OAUTH2_ACCESS_TOKEN_URL_CONFIG,
-                List.of(OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                List.of(OAUTH2_GRANT_TYPE_KEY_CONFIG, OAUTH2_GRANT_TYPE_CONFIG, OAUTH2_CLIENT_ID_KEY_CONFIG,
+                        OAUTH2_CLIENT_ID_CONFIG,
+                        OAUTH2_CLIENT_SECRET_KEY_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG,
                         OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
+        );
+        configDef.define(
+                OAUTH2_GRANT_TYPE_KEY_CONFIG,
+                ConfigDef.Type.STRING,
+                "grant_type",
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 grant type key";
+                    }
+                },
+                ConfigDef.Importance.HIGH,
+                "The grant type Key used for fetching an access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_GRANT_TYPE_KEY_CONFIG,
+                List.of(OAUTH2_GRANT_TYPE_CONFIG)
+        );
+        configDef.define(
+                OAUTH2_GRANT_TYPE_CONFIG,
+                ConfigDef.Type.STRING,
+                "client_credentials",
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 grant type";
+                    }
+                },
+                ConfigDef.Importance.HIGH,
+                "The grant type used for fetching an access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_GRANT_TYPE_CONFIG
+        );
+        configDef.define(
+                OAUTH2_CLIENT_ID_KEY_CONFIG,
+                ConfigDef.Type.STRING,
+                "client_id",
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 client id Key";
+                    }
+                },
+                ConfigDef.Importance.HIGH,
+                "The client id Key used for fetching an access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_CLIENT_ID_KEY_CONFIG,
+                List.of(OAUTH2_CLIENT_ID_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_ID_CONFIG,
@@ -221,6 +281,18 @@ public class HttpSinkConfig extends AbstractConfig {
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
                         OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
+        );
+        configDef.define(
+                OAUTH2_CLIENT_SECRET_KEY_CONFIG,
+                Type.STRING,
+                "client_secret",
+                ConfigDef.Importance.HIGH,
+                "The secret Key used for fetching an access token.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_CLIENT_SECRET_KEY_CONFIG,
+                List.of(OAUTH2_CLIENT_SECRET_CONFIG)
         );
         configDef.define(
                 OAUTH2_CLIENT_SECRET_CONFIG,
@@ -491,44 +563,25 @@ public class HttpSinkConfig extends AbstractConfig {
     }
 
     private void validate() {
-        switch (authorizationType()) {
+        final AuthorizationType authorizationType = authorizationType();
+        switch (authorizationType) {
             case STATIC:
                 if (headerAuthorization() == null || headerAuthorization().isBlank()) {
                     throw new ConfigException(
                         HTTP_HEADERS_AUTHORIZATION_CONFIG,
                         getPassword(HTTP_HEADERS_AUTHORIZATION_CONFIG),
-                        "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                            + " = " + AuthorizationType.STATIC);
+                            "Must be present when " + HTTP_AUTHORIZATION_TYPE_CONFIG
+                            + " = " + authorizationType);
                 }
                 break;
-            case OAUTH2:
-                if (oauth2AccessTokenUri() == null) {
-                    throw new ConfigException(
-                            OAUTH2_ACCESS_TOKEN_URL_CONFIG, getString(OAUTH2_ACCESS_TOKEN_URL_CONFIG),
-                            "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                                    + " = " + AuthorizationType.OAUTH2);
-                }
-                if (oauth2ClientId() == null || oauth2ClientId().isEmpty()) {
-                    throw new ConfigException(
-                            OAUTH2_CLIENT_ID_CONFIG,
-                            getString(OAUTH2_CLIENT_ID_CONFIG),
-                            "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                                    + " = " + AuthorizationType.OAUTH2);
-                }
-                if (oauth2ClientSecret() == null || oauth2ClientSecret().value().isEmpty()) {
-                    throw new ConfigException(
-                            OAUTH2_CLIENT_SECRET_CONFIG,
-                            getPassword(OAUTH2_CLIENT_SECRET_CONFIG),
-                            "Must be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
-                                    + " = " + AuthorizationType.OAUTH2);
-                }
+            case OAUTH2: handleMissingConfigurationForOAuth2();
                 break;
             case NONE:
                 if (headerAuthorization() != null && !headerAuthorization().isBlank()) {
                     throw new ConfigException(
                         HTTP_HEADERS_AUTHORIZATION_CONFIG,
                         getPassword(HTTP_HEADERS_AUTHORIZATION_CONFIG),
-                        "Must not be present when " + HTTP_HEADERS_CONTENT_TYPE_CONFIG
+                        "Must not be present when " + HTTP_AUTHORIZATION_TYPE_CONFIG
                             + " != " + AuthorizationType.STATIC);
                 }
                 break;
@@ -542,6 +595,24 @@ public class HttpSinkConfig extends AbstractConfig {
             throw new ConfigException("Cannot use errors.tolerance when batching is enabled");
         }
 
+    }
+
+    private void handleMissingConfigurationForOAuth2() {
+        Stream.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_GRANT_TYPE_KEY_CONFIG, OAUTH2_GRANT_TYPE_CONFIG,
+                      OAUTH2_CLIENT_ID_KEY_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_KEY_CONFIG)
+              .filter(configKey -> getString(configKey) == null || getString(configKey).isBlank())
+              .findFirst()
+              .ifPresent(missingConfiguration -> {
+                  throw new ConfigException(missingConfiguration, getString(missingConfiguration),
+                          "Must be present when " + HTTP_HEADERS_AUTHORIZATION_CONFIG + " = "
+                          +
+                          AuthorizationType.OAUTH2);
+              });
+
+        if (oauth2ClientSecret() == null || oauth2ClientSecret().value().isEmpty()) {
+            throw new ConfigException(OAUTH2_CLIENT_SECRET_CONFIG, oauth2ClientSecret(),
+                    "Must be present when " + HTTP_HEADERS_AUTHORIZATION_CONFIG + " = " + AuthorizationType.OAUTH2);
+        }
     }
 
     public final URI httpUri() {
@@ -620,19 +691,35 @@ public class HttpSinkConfig extends AbstractConfig {
     }
 
     public final URI oauth2AccessTokenUri() {
-        return getString(OAUTH2_ACCESS_TOKEN_URL_CONFIG) != null ? toURI(OAUTH2_ACCESS_TOKEN_URL_CONFIG) : null;
+        return toURI(OAUTH2_ACCESS_TOKEN_URL_CONFIG);
     }
 
     private URI toURI(final String propertyName) {
         try {
             return new URL(getString(propertyName)).toURI();
         } catch (final MalformedURLException | URISyntaxException e) {
-            throw new ConnectException(e);
+            throw new ConnectException(String.format("Could not retrieve proper URI from %s", propertyName), e);
         }
+    }
+
+    public final String oauth2GrantTypeKey() {
+        return getString(OAUTH2_GRANT_TYPE_KEY_CONFIG);
+    }
+
+    public final String oauth2GrantType() {
+        return getString(OAUTH2_GRANT_TYPE_CONFIG);
+    }
+
+    public final String oauth2ClientIdKey() {
+        return getString(OAUTH2_CLIENT_ID_KEY_CONFIG);
     }
 
     public final String oauth2ClientId() {
         return getString(OAUTH2_CLIENT_ID_CONFIG);
+    }
+
+    public final String oauth2ClientSecretKey() {
+        return getString(OAUTH2_CLIENT_SECRET_KEY_CONFIG);
     }
 
     public final Password oauth2ClientSecret() {

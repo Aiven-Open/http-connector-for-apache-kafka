@@ -16,7 +16,9 @@
 
 package io.aiven.kafka.connect.http.converter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
@@ -38,31 +40,26 @@ class RecordValueConverterTest {
     @Test
     void convertAvroRecord() {
         final var recordSchema = SchemaBuilder.struct()
-                .name("record")
-                .field("name", SchemaBuilder.string())
-                .field("value", SchemaBuilder.string());
+                                              .name("record")
+                                              .field("name", SchemaBuilder.string())
+                                              .field("value", SchemaBuilder.string());
 
         final var value = new Struct(recordSchema);
         value.put(new Field("name", 0, SchemaBuilder.string()), "user-0");
         value.put(new Field("value", 1, SchemaBuilder.string()), "value-0");
 
-        final var sinkRecord = new SinkRecord(
-                "some-topic", 0,
-                SchemaBuilder.string(),
-                "some-key", recordSchema, value, 1L);
+        final var sinkRecord =
+            new SinkRecord("some-topic", 0, SchemaBuilder.string(), "some-key", recordSchema, value, 1L);
 
-        assertThat(recordValueConverter.convert(sinkRecord))
-                .isEqualTo("{\"name\":\"user-0\",\"value\":\"value-0\"}");
+        assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("{\"name\":\"user-0\",\"value\":\"value-0\"}");
     }
 
     @Test
     void convertStringRecord() {
         final var recordSchema = SchemaBuilder.string();
 
-        final var sinkRecord = new SinkRecord(
-                "some-topic", 0,
-                SchemaBuilder.string(),
-                "some-key", recordSchema, "some-str-value", 1L);
+        final var sinkRecord =
+            new SinkRecord("some-topic", 0, SchemaBuilder.string(), "some-key", recordSchema, "some-str-value", 1L);
 
         assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("some-str-value");
     }
@@ -74,25 +71,36 @@ class RecordValueConverterTest {
         final Map<String, String> value = new HashMap<>();
         value.put("key", "value");
 
-        final var sinkRecord = new SinkRecord(
-                "some-topic", 0,
-                SchemaBuilder.string(),
-                "some-key", recordSchema, value, 1L);
+        final var sinkRecord =
+            new SinkRecord("some-topic", 0, SchemaBuilder.string(), "some-key", recordSchema, value, 1L);
 
         assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("{\"key\":\"value\"}");
     }
 
+    @Test
+    void convertListRecord() {
+        final var itemSchema = SchemaBuilder.struct().field("name", SchemaBuilder.STRING_SCHEMA);
+        final var recordSchema = SchemaBuilder.array(itemSchema);
+
+        final List<Struct> value = new ArrayList<>();
+        value.add(new Struct(itemSchema).put("name", "person1"));
+        value.add(new Struct(itemSchema).put("name", "person2"));
+
+        final var sinkRecord =
+            new SinkRecord("some-topic", 0, SchemaBuilder.string(), "some-key", recordSchema, value, 1L);
+
+        assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo(
+            "[{\"name\":\"person1\"},{\"name\":\"person2\"}]");
+    }
 
     @Test
     void throwsDataExceptionForUnknownRecordValueClass() {
         final var recordSchema = SchemaBuilder.int64();
-        final var sinkRecord = new SinkRecord(
-                "some-topic", 0,
-                SchemaBuilder.string(), "some-key",
-                recordSchema, 42L, 1L);
+        final var sinkRecord =
+            new SinkRecord("some-topic", 0, SchemaBuilder.string(), "some-key", recordSchema, 42L, 1L);
 
-        assertThatExceptionOfType(DataException.class)
-                .isThrownBy(() -> recordValueConverter.convert(sinkRecord)).isInstanceOf(DataException.class);
+        assertThatExceptionOfType(DataException.class).isThrownBy(() -> recordValueConverter.convert(sinkRecord))
+                                                      .isInstanceOf(DataException.class);
     }
 
 }

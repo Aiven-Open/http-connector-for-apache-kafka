@@ -16,16 +16,25 @@
 
 package io.aiven.kafka.connect.http.sender;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest.Builder;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
+import io.aiven.kafka.connect.http.sender.DefaultHttpSender.DefaultHttpRequestBuilder;
 
-interface HttpRequestBuilder {
+class StaticHttpSender extends AbstractHttpSender {
 
-    String HEADER_AUTHORIZATION = "Authorization";
+    StaticHttpSender(final HttpSinkConfig config, final HttpClient client) {
+        super(config, new StaticAuthHttpRequestBuilder(), client);
+    }
 
-    String HEADER_CONTENT_TYPE = "Content-Type";
+    private static class StaticAuthHttpRequestBuilder extends DefaultHttpRequestBuilder {
 
-    HttpRequest.Builder build(HttpSinkConfig config);
+        @Override
+        public Builder build(final HttpSinkConfig config) {
+            return super.build(config).header(HEADER_AUTHORIZATION, config.headerAuthorization());
+        }
+
+    }
 
 }

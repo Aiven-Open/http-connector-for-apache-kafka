@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.connect.http.converter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,9 @@ public class RecordValueConverter {
     private final Map<Class<?>, Converter> converters = Map.of(
             String.class, record -> (String) record.value(),
             HashMap.class, jsonRecordValueConverter,
-            Struct.class, jsonRecordValueConverter
+            Struct.class, jsonRecordValueConverter,
+            // An array of Json objects
+            ArrayList.class, jsonRecordValueConverter
     );
 
     interface Converter {
@@ -40,7 +43,7 @@ public class RecordValueConverter {
     public String convert(final SinkRecord record) {
         if (!converters.containsKey(record.value().getClass())) {
             throw new DataException(
-                    "Record value must be String, Schema Struct or HashMap," 
+                    "Record value must be String, HashMap, ArrayList or Schema Struct"
                     + " but " + record.value().getClass() + " is given");
         }
         return converters.get(record.value().getClass()).convert(record);
