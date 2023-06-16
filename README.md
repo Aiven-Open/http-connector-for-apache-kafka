@@ -18,7 +18,7 @@ The connector supports:
 - batching;
 - delivery retries.
 
-An example of configuration:
+An example of configuration (file `connect-http-sink.json`):
 
 ```json
 {
@@ -35,6 +35,12 @@ An example of configuration:
     "value.converter": "org.apache.kafka.connect.json.JsonConverter"
   }
 }
+```
+
+Then deploy the connector configuration against the Kafka Connect REST API with the following command:
+
+```shell
+curl -d @config/connect-http-sink.json -H "Content-Type: application/json" -X POST http://localhost:8083/connector
 ```
 
 See the [configuration options](docs/sink-connector-config-options.rst) for details.
