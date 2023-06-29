@@ -131,7 +131,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to missing OAuth access token URL")
                 .isThrownBy(() -> new HttpSinkConfig(noAccessTokenUrlConfig))
                 .withMessage("Invalid value null for configuration oauth2.access.token.url: "
-                        + "Must be present when http.headers.content.type = OAUTH2");
+                        + "Must be present when http.headers.authorization = OAUTH2");
 
         final var noSecretIdConfig = Map.of(
                 "http.url", "http://localhost:8090",
@@ -143,7 +143,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to missing OAuth client id")
                 .isThrownBy(() -> new HttpSinkConfig(noSecretIdConfig))
                 .withMessage("Invalid value null for configuration oauth2.client.id: "
-                        + "Must be present when http.headers.content.type = OAUTH2");
+                        + "Must be present when http.headers.authorization = OAUTH2");
 
         final var noSecretConfig = Map.of(
                 "http.url", "http://localhost:8090",
@@ -156,7 +156,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to missing OAuth client secret")
                 .isThrownBy(() -> new HttpSinkConfig(noSecretConfig))
                 .withMessage("Invalid value null for configuration oauth2.client.secret: "
-                        + "Must be present when http.headers.content.type = OAUTH2");
+                        + "Must be present when http.headers.authorization = OAUTH2");
     }
 
     @Test
@@ -304,7 +304,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to missing authorization headers")
                 .isThrownBy(() -> new HttpSinkConfig(properties))
                 .withMessage("Invalid value null for configuration http.headers.authorization: "
-                        + "Must be present when http.headers.content.type = STATIC");
+                        + "Must be present when http.authorization.type = STATIC");
     }
 
     @Test
@@ -319,7 +319,7 @@ final class HttpSinkConfigTest {
                 .describedAs("Expected config exception due to invalid authorization header")
                 .isThrownBy(() -> new HttpSinkConfig(properties))
                 .withMessage("Invalid value [hidden] for configuration http.headers.authorization: "
-                        + "Must not be present when http.headers.content.type != STATIC");
+                        + "Must not be present when http.authorization.type != STATIC");
     }
 
     @Test

@@ -164,6 +164,64 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
     }
 
     @Test
+    void shouldBuildCustomisedAccessTokenRequest() throws Exception {
+        final Map<String, String> configBase = new HashMap<>(defaultConfig());
+        configBase.put("oauth2.client.authorization.mode", "url");
+        configBase.put("oauth2.grant_type.key", "type");
+        configBase.put("oauth2.grant_type", "api-key");
+        configBase.put("oauth2.client.id.key", "key");
+        configBase.put("oauth2.client.id", "some_client_id");
+        configBase.put("oauth2.client.secret.key", "secret");
+        configBase.put("oauth2.client.secret", "some_client_secret");
+        configBase.put("oauth2.client.scope", "scope1,scope2");
+
+        // Build the configuration
+        final HttpSinkConfig config = new HttpSinkConfig(configBase);
+
+        // Mock the Client and Response
+        when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
+
+        // Create a spy on the HttpSender implementation to capture methods parameters
+        final var httpSender = Mockito.spy(new AccessTokenHttpSender(config, mockedClient));
+
+        // Trigger the client
+        final List<String> messages =
+            List.of("type=api-key&scope=scope1%2Cscope2&key=some_client_id&secret=some_client_secret");
+        messages.forEach(httpSender::send);
+
+        // Capture the RequestBuilder
+        final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
+        verify(httpSender, atLeast(messages.size())).sendWithRetries(defaultHttpRequestBuilder.capture(),
+            any(HttpResponseHandler.class), anyInt());
+
+        defaultHttpRequestBuilder
+            .getAllValues()
+            .stream()
+            .map(Builder::build)
+            .forEach(httpRequest -> {
+                // Generic Assertions
+                assertThat(httpRequest.uri()).isEqualTo(config.oauth2AccessTokenUri());
+                assertThat(httpRequest.timeout())
+                    .isPresent()
+                    .get(as(InstanceOfAssertFactories.DURATION))
+                    .hasSeconds(config.httpTimeout());
+                assertThat(httpRequest.method()).isEqualTo("POST");
+
+                assertThat(httpRequest
+                    .headers()
+                    .firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE)).hasValue("application/x-www-form-urlencoded");
+                assertThat(httpRequest
+                    .headers()
+                    .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)).isEmpty();
+            });
+
+        // Check the messages have been sent once
+        messages.forEach(
+            message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+
+    }
+
+    @Test
     void throwsConnectExceptionForServerError() {
         // Mock response with 500 for all responses after the 1st one from super method
         final HttpResponse<String> errorResponse = mock(HttpResponse.class);
