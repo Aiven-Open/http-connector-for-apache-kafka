@@ -23,9 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Objects;
-import java.util.StringJoiner;
-
-import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode;
