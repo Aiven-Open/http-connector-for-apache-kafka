@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Aiven Oy and http-connector-for-apache-kafka project contributors
+ * Copyright 2023 Aiven Oy and http-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -56,8 +55,7 @@ public class AccessTokenHttpSenderTest extends HttpSenderTestUtils<AccessTokenHt
 
     @Test
     void shouldThrowExceptionWithoutConfig() {
-        final Exception thrown = assertThrows(NullPointerException.class, () -> new AccessTokenHttpSender(null, null));
-        assertEquals("config should not be null", thrown.getMessage());
+        assertThrows(NullPointerException.class, () -> new AccessTokenHttpSender(null, null));
     }
 
     @Test

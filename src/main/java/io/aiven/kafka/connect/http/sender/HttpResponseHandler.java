@@ -28,7 +28,7 @@ interface HttpResponseHandler {
 
     void onResponse(final HttpResponse<String> response, int retriesNumber) throws IOException;
 
-    HttpResponseHandler ON_HTTP_ERROR_RESPONSE_HANDLER = (response, retriesNumer) -> {
+    HttpResponseHandler ON_HTTP_ERROR_RESPONSE_HANDLER = (response, remainingRetries) -> {
         if (response.statusCode() >= 400) {
             final var request = response.request();
             final var uri = request != null ? request.uri() : "UNKNOWN";

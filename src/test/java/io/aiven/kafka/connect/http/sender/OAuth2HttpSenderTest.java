@@ -42,7 +42,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -63,8 +62,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
 
     @Test
     void shouldThrowExceptionWithoutConfig() {
-        final Exception thrown = assertThrows(NullPointerException.class, () -> new OAuth2HttpSender(null, null, null));
-        assertEquals("config should not be null", thrown.getMessage());
+        assertThrows(NullPointerException.class, () -> new OAuth2HttpSender(null, null, null));
     }
 
     @Test

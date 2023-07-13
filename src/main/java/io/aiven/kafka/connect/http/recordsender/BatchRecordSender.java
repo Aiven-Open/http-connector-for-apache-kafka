@@ -32,7 +32,7 @@ final class BatchRecordSender extends RecordSender {
     private final String batchSuffix;
     private final String batchSeparator;
 
-    BatchRecordSender(final HttpSender httpSender,
+    protected BatchRecordSender(final HttpSender httpSender,
                                 final int batchMaxSize,
                                 final String batchPrefix,
                                 final String batchSuffix,

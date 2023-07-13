@@ -44,28 +44,34 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
 
     @Override
     protected HttpResponse<String> sendWithRetries(
-        final Builder requestBuilderWithPayload,
+        final Builder requestBuilder,
         final HttpResponseHandler originHttpResponseHandler,
-        final int retriesNumber
+        final int retries
     ) {
-        final HttpResponseHandler handler = (response, retriesRemain) -> {
-            if (response.statusCode() == 401 && retriesRemain > 0) { // access denied or refresh of a token is needed
-                ((OAuth2AuthHttpRequestBuilder) this.httpRequestBuilder).renewAccessToken(requestBuilderWithPayload);
-                this.sendWithRetries(requestBuilderWithPayload, originHttpResponseHandler, retriesRemain - 1);
+        // This handler allows to request a new access token if a 401 occurs, meaning the session might be expired
+        final HttpResponseHandler handler = (response, remainingRetries) -> {
+            // If the response has a 401 error and we have retries left, we attempt to renew the session
+            if (response.statusCode() == 401 && remainingRetries > 0) {
+                // Update the request builder with the new access token
+                ((OAuth2AuthHttpRequestBuilder) this.httpRequestBuilder).renewAccessToken(requestBuilder);
+                // Retry the call and decrease the retries counter to avoid looping on token renewal
+                this.sendWithRetries(requestBuilder, originHttpResponseHandler, remainingRetries - 1);
             } else {
-                originHttpResponseHandler.onResponse(response, retriesRemain);
+                originHttpResponseHandler.onResponse(response, remainingRetries);
             }
         };
-        return super.sendWithRetries(requestBuilderWithPayload, handler, retriesNumber);
+        return super.sendWithRetries(requestBuilder, handler, retries);
     }
 
     static class OAuth2AuthHttpRequestBuilder extends DefaultHttpRequestBuilder {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2AuthHttpRequestBuilder.class);
-        private final ObjectMapper objectMapper = new ObjectMapper();
-        private String accessTokenAuthHeader;
-        private final AccessTokenHttpSender accessTokenHttpSender;
+        private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
         private final HttpSinkConfig config;
+        private final AccessTokenHttpSender accessTokenHttpSender;
+
+        private String accessToken;
 
         OAuth2AuthHttpRequestBuilder(final HttpSinkConfig config, final AccessTokenHttpSender accessTokenHttpSender) {
             this.config = config;
@@ -76,32 +82,44 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
         public Builder build(final HttpSinkConfig config) {
             return super
                 .build(config)
+                // We need to retrieve an access token first
                 .header(HEADER_AUTHORIZATION, getAccessToken());
         }
 
-        void renewAccessToken(final HttpRequest.Builder requestBuilderWithPayload) {
-            this.accessTokenAuthHeader = null;
-            requestBuilderWithPayload.setHeader(HttpRequestBuilder.HEADER_AUTHORIZATION, this.getAccessToken());
+        /**
+         * When expired, reinitialize the current token, request a new one and update the request builder
+         * @param requestBuilder the request builder used to call the protected URI
+         */
+        void renewAccessToken(final HttpRequest.Builder requestBuilder) {
+            this.accessToken = null;
+            requestBuilder.setHeader(HttpRequestBuilder.HEADER_AUTHORIZATION, this.getAccessToken());
         }
 
+        /**
+         * Retrieves the current access token or requests it if none is defined
+         * @return an access token
+         */
         private String getAccessToken() {
-            if (this.accessTokenAuthHeader != null) {
-                return this.accessTokenAuthHeader;
+            // Re-use the access token if it's already defined
+            if (this.accessToken != null) {
+                return this.accessToken;
             }
             LOGGER.info("Configure OAuth2 for URI: {} and Client ID: {}", config.oauth2AccessTokenUri(),
                 config.oauth2ClientId());
             try {
+                // Whenever the access token is null (not initialized yet or expired), call the AccessTokenHttpSender
+                // implementation to request one
                 final var response = accessTokenHttpSender.call();
-                accessTokenAuthHeader = buildAccessTokenAuthHeader(response.body());
+                accessToken = buildAccessTokenAuthHeader(response.body());
             } catch (final IOException e) {
                 throw new ConnectException("Couldn't get OAuth2 access token", e);
             }
-            return accessTokenAuthHeader;
+            return accessToken;
         }
 
         private String buildAccessTokenAuthHeader(final String oauth2ResponseBody) throws JsonProcessingException {
             final var accessTokenResponse =
-                objectMapper.readValue(oauth2ResponseBody, new TypeReference<Map<String, String>>() {});
+                OBJECT_MAPPER.readValue(oauth2ResponseBody, new TypeReference<Map<String, String>>() {});
             if (!accessTokenResponse.containsKey(config.oauth2ResponseTokenProperty())) {
                 throw new ConnectException("Couldn't find access token property " + config.oauth2ResponseTokenProperty()
                                            + " in response properties: " + accessTokenResponse.keySet());

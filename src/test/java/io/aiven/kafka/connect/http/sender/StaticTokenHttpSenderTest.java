@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Aiven Oy and http-connector-for-apache-kafka project contributors
+ * Copyright 2023 Aiven Oy and http-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -50,12 +49,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticHttpSender> {
+public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHttpSender> {
 
     @Test
     void shouldThrowExceptionWithoutConfig() {
-        final Exception thrown = assertThrows(NullPointerException.class, () -> new StaticHttpSender(null, null));
-        assertEquals("config should not be null", thrown.getMessage());
+        assertThrows(NullPointerException.class, () -> new StaticAuthHttpSender(null, null));
     }
 
     @Test
@@ -68,7 +66,7 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticHttpSen
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new StaticHttpSender(config, mockedClient));
+        final var httpSender = Mockito.spy(new StaticAuthHttpSender(config, mockedClient));
 
         // Trigger the client
         final List<String> messages = List.of("some message");
@@ -120,7 +118,7 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticHttpSen
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new StaticHttpSender(config, mockedClient));
+        final var httpSender = Mockito.spy(new StaticAuthHttpSender(config, mockedClient));
 
         // Trigger the client
         final List<String> messages = List.of("some message");
@@ -184,7 +182,7 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticHttpSen
                 when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(errorResponse);
 
                 // Create a spy on the HttpSender implementation to capture methods parameters
-                final var httpSender = Mockito.spy(new StaticHttpSender(config, mockedClient));
+                final var httpSender = Mockito.spy(new StaticAuthHttpSender(config, mockedClient));
 
                 // Trigger the client
                 final List<String> messages = List.of("some message 1", "some message 2");

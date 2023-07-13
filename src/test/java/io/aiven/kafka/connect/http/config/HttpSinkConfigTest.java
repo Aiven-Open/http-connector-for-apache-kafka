@@ -68,6 +68,7 @@ final class HttpSinkConfigTest {
                 .returns(1, from(HttpSinkConfig::maxRetries))
                 .returns(3000, from(HttpSinkConfig::retryBackoffMs))
                 .returns(Collections.emptyMap(), from(HttpSinkConfig::getAdditionalHeaders))
+                .returns(null, from(HttpSinkConfig::oauth2AccessTokenUri))
                 .returns(null, from(HttpSinkConfig::oauth2ClientId))
                 .returns(null, from(HttpSinkConfig::oauth2ClientSecret))
                 .returns(null, from(HttpSinkConfig::oauth2ClientScope))

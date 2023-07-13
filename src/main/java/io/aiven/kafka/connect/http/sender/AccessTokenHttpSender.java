@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Aiven Oy and http-connector-for-apache-kafka project contributors
+ * Copyright 2023 Aiven Oy and http-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 import org.apache.kafka.connect.errors.ConnectException;
@@ -49,8 +50,8 @@ class AccessTokenHttpSender extends AbstractHttpSender implements HttpSender {
     }
 
     private void setClientIdAndSecret(
-        final StringJoiner requestBodyBuilder,
-        final HttpSinkConfig config) {
+        final StringJoiner requestBodyBuilder, final HttpSinkConfig config
+    ) {
         if (config.oauth2AuthorizationMode() == URL) {
             addClientIdAndSecretInRequestBody(requestBodyBuilder, config);
         } else if (config.oauth2AuthorizationMode() != HEADER) {
@@ -83,7 +84,7 @@ class AccessTokenHttpSender extends AbstractHttpSender implements HttpSender {
         @Override
         public HttpRequest.Builder build(final HttpSinkConfig config) {
             final var builder = HttpRequest
-                .newBuilder(config.oauth2AccessTokenUri())
+                .newBuilder(Objects.requireNonNull(config.oauth2AccessTokenUri()))
                 .timeout(Duration.ofSeconds(config.httpTimeout()))
                 .header(HEADER_CONTENT_TYPE, HEADER_CONTENT_TYPE_FORM);
             if (config.oauth2AuthorizationMode() == HEADER) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Aiven Oy and http-connector-for-apache-kafka project contributors
+ * Copyright 2023 Aiven Oy and http-connector-for-apache-kafka project contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
-public class HttpSenderFactory {
+public final class HttpSenderFactory {
 
     public static HttpSender createHttpSender(final HttpSinkConfig config) {
         switch (config.authorizationType()) {
             case NONE:
                 return new DefaultHttpSender(config, HttpClient.newHttpClient());
             case STATIC:
-                return new StaticHttpSender(config, HttpClient.newHttpClient());
+                return new StaticAuthHttpSender(config, HttpClient.newHttpClient());
             case OAUTH2:
                 final AccessTokenHttpSender accessTokenHttpSender =
                         new AccessTokenHttpSender(config, HttpClient.newHttpClient());
