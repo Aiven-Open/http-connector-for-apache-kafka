@@ -50,24 +50,24 @@ Connection
   * Default: null
   * Valid Values: HTTP(S) URL
   * Importance: high
-  * Dependents: ``oauth2.grant_type.key``, ``oauth2.grant_type``, ``oauth2.client.id.key``, ``oauth2.client.id``, ``oauth2.client.secret.key``, ``oauth2.client.secret``, ``oauth2.client.authorization.mode``, ``oauth2.client.scope``, ``oauth2.response.token.property``
+  * Dependents: ``oauth2.request.grant.type.property``, ``oauth2.grant.type``, ``oauth2.request.client.id.property``, ``oauth2.client.id``, ``oauth2.request.client.secret.property``, ``oauth2.client.secret``, ``oauth2.client.authorization.mode``, ``oauth2.client.scope``, ``oauth2.response.token.property``
 
-``oauth2.grant_type.key``
+``oauth2.request.grant.type.property``
   The grant type Key used for fetching an access token.
 
   * Type: string
   * Default: "grant_type"
   * Importance: high
-  * Dependents: ``oauth2.grant_type``
+  * Dependents: ``oauth2.grant.type``
 
-``oauth2.grant_type``
+``oauth2.grant.type``
   The grant type used for fetching an access token.
 
   * Type: string
   * Default: "client_credentials"
   * Importance: high
 
-``oauth2.client.id.key``
+``oauth2.request.client.id.property``
   The client id Key used for fetching an access token.
 
   * Type: string
@@ -85,7 +85,7 @@ Connection
   * Dependents: ``oauth2.access.token.url``, ``oauth2.client.secret``, ``oauth2.client.authorization.mode``, ``oauth2.client.scope``, ``oauth2.response.token.property``
 
 
-``oauth2.client.secret.key``
+``oauth2.request.client.secret.property``
   The client secret Key used for fetching an access token.
 
   * Type: string
@@ -108,7 +108,7 @@ Connection
   * Default: HEADER
   * Valid Values: [HEADER, URL]
   * Importance: medium
-  * Dependents: ``oauth2.access.token.url``, ``oauth2.grant_type.key``, ``oauth2.grant_type``, ``oauth2.client.id.key``, ``oauth2.client.id``, ``oauth2.client.secret.key``, ``oauth2.client.secret``, ``oauth2.client.scope``, ``oauth2.response.token.property``
+  * Dependents: ``oauth2.access.token.url``, ``oauth2.request.grant.type.property``, ``oauth2.grant.type``, ``oauth2.request.client.id.property``, ``oauth2.client.id``, ``oauth2.request.client.secret.property``, ``oauth2.client.secret``, ``oauth2.client.scope``, ``oauth2.response.token.property``
 
 ``oauth2.client.scope``
   The scope used for fetching an access token.

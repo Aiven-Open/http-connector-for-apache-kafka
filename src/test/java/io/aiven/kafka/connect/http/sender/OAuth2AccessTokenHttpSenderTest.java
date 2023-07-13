@@ -75,7 +75,7 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
 
         // Trigger the client
         final List<String> messages = List.of("grant_type=client_credentials");
-        messages.forEach(message -> httpSender.call());
+        httpSender.call();
 
         // Capture the RequestBuilder
         final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
@@ -128,7 +128,7 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
         // Trigger the client
         final List<String> messages =
             List.of("grant_type=client_credentials&client_id=some_client_id&client_secret=some_client_secret");
-        messages.forEach(httpSender::send);
+        httpSender.call();
 
         // Capture the RequestBuilder
         final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
@@ -167,11 +167,11 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
     void shouldBuildCustomisedAccessTokenRequest() throws Exception {
         final Map<String, String> configBase = new HashMap<>(defaultConfig());
         configBase.put("oauth2.client.authorization.mode", "url");
-        configBase.put("oauth2.grant_type.key", "type");
-        configBase.put("oauth2.grant_type", "api-key");
-        configBase.put("oauth2.client.id.key", "key");
+        configBase.put("oauth2.request.grant.type.property", "type");
+        configBase.put("oauth2.grant.type", "api-key");
+        configBase.put("oauth2.request.client.id.property", "key");
         configBase.put("oauth2.client.id", "some_client_id");
-        configBase.put("oauth2.client.secret.key", "secret");
+        configBase.put("oauth2.request.client.secret.property", "secret");
         configBase.put("oauth2.client.secret", "some_client_secret");
         configBase.put("oauth2.client.scope", "scope1,scope2");
 
@@ -187,7 +187,7 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
         // Trigger the client
         final List<String> messages =
             List.of("type=api-key&scope=scope1%2Cscope2&key=some_client_id&secret=some_client_secret");
-        messages.forEach(httpSender::send);
+        httpSender.call();
 
         // Capture the RequestBuilder
         final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);

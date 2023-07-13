@@ -9,5 +9,4 @@ module io.aiven.kafka.connect.http {
     // tooling
     requires org.slf4j;
     requires com.github.spotbugs.annotations;
-    requires lombok;
 }

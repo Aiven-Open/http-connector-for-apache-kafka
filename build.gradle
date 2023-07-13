@@ -77,7 +77,6 @@ ext {
     testcontainersVersion = '1.19.0'
     assertjVersion = "3.24.2"
     awaitilityVersion = "4.2.0"
-    lombokVersion = "1.18.26"
 }
 
 distributions {
@@ -114,9 +113,6 @@ dependencies {
     compileOnly "org.apache.kafka:connect-api:$kafkaVersion"
     compileOnly "org.apache.kafka:connect-json:$kafkaVersion"
     compileOnly "org.apache.kafka:kafka-clients:$kafkaVersion"
-    compileOnly "org.projectlombok:lombok:$lombokVersion"
-
-    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
 
     // For Spotbugs suppressions
     compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
@@ -125,8 +121,6 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation "org.slf4j:slf4j-api:$slf4japiVersion"
-
-    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
 
     testRuntimeOnly "org.apache.kafka:connect-json:$kafkaVersion"
     testRuntimeOnly "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"

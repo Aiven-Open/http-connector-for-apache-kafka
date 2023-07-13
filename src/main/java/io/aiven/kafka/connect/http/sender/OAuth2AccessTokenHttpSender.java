@@ -30,7 +30,6 @@ import org.apache.kafka.connect.errors.ConnectException;
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode;
 import io.aiven.kafka.connect.http.sender.request.OAuth2Form;
-import io.aiven.kafka.connect.http.sender.request.OAuth2Form.OAuth2FormBuilder;
 
 import static io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode.HEADER;
 
@@ -41,7 +40,7 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
     }
 
     HttpResponse<String> call() {
-        final OAuth2FormBuilder bodyBuilder = OAuth2Form
+        final OAuth2Form.Builder bodyBuilder = OAuth2Form.Builder
             .builder()
             .grantTypeFormField(config.oauth2GrantTypeKey())
             .grantType(config.oauth2GrantType())
@@ -58,7 +57,7 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
         }
         return super.send(bodyBuilder
             .build()
-            .toString());
+            .toBodyString());
     }
 
     private static class AccessTokenHttpRequestBuilder implements HttpRequestBuilder {

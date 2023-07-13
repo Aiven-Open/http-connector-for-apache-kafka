@@ -20,32 +20,48 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.StringJoiner;
 
-import lombok.Builder;
-
-@Builder
 public class OAuth2Form {
 
     private static final String SCOPE = "scope";
     private final StringJoiner stringJoiner = new StringJoiner("&");
 
-    private String grantTypeFormField;
-    private String grantType;
+    private final String grantTypeFormField;
+    private final String grantType;
 
-    private String scope;
-    private String clientIdFormField;
-    private String clientId;
+    private final String scope;
+    private final String clientIdFormField;
+    private final String clientId;
 
-    private String clientSecretFormField;
-    private String clientSecret;
+    private final String clientSecretFormField;
+    private final String clientSecret;
 
-    public String toString() {
+    private OAuth2Form(
+        final String grantTypeFormField,
+        final String grantType,
+        final String scope,
+        final String clientIdFormField,
+        final String clientId,
+        final String clientSecretFormField,
+        final String clientSecret
+    ) {
+        this.grantTypeFormField = grantTypeFormField;
+        this.grantType = grantType;
+        this.scope = scope;
+        this.clientIdFormField = clientIdFormField;
+        this.clientId = clientId;
+        this.clientSecretFormField = clientSecretFormField;
+        this.clientSecret = clientSecret;
+    }
+
+    public String toBodyString() {
         stringJoiner.add(encodeNameAndValue(grantTypeFormField, grantType));
         if (scope != null) {
             stringJoiner.add(encodeNameAndValue(SCOPE, scope));
         }
         if (clientId != null && clientSecret != null) {
-            stringJoiner.add(encodeNameAndValue(clientIdFormField, clientId))
-                        .add(encodeNameAndValue(clientSecretFormField, clientSecret));
+            stringJoiner
+                .add(encodeNameAndValue(clientIdFormField, clientId))
+                .add(encodeNameAndValue(clientSecretFormField, clientSecret));
         }
         return stringJoiner.toString();
     }
@@ -56,6 +72,67 @@ public class OAuth2Form {
 
     private static String encode(final String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    public static class Builder {
+
+        private String grantTypeFormField;
+        private String grantType;
+
+        private String scope;
+        private String clientIdFormField;
+        private String clientId;
+
+        private String clientSecretFormField;
+        private String clientSecret;
+
+        private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public Builder grantTypeFormField(final String grantTypeFormField) {
+            this.grantTypeFormField = grantTypeFormField;
+            return this;
+        }
+
+        public Builder grantType(final String grantType) {
+            this.grantType = grantType;
+            return this;
+        }
+
+        public Builder scope(final String scope) {
+            this.scope = scope;
+            return this;
+        }
+
+        public Builder clientIdFormField(final String clientIdFormField) {
+            this.clientIdFormField = clientIdFormField;
+            return this;
+        }
+
+        public Builder clientId(final String clientId) {
+            this.clientId = clientId;
+            return this;
+        }
+
+        public Builder clientSecretFormField(final String clientSecretFormField) {
+            this.clientSecretFormField = clientSecretFormField;
+            return this;
+        }
+
+        public Builder clientSecret(final String clientSecret) {
+            this.clientSecret = clientSecret;
+            return this;
+        }
+
+        public OAuth2Form build() {
+            return new OAuth2Form(grantTypeFormField, grantType, scope, clientIdFormField, clientId,
+                clientSecretFormField, clientSecret);
+        }
+
     }
 
 }

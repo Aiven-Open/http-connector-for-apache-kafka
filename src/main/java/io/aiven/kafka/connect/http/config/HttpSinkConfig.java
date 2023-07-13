@@ -49,11 +49,11 @@ public class HttpSinkConfig extends AbstractConfig {
     public static final String KAFKA_RETRY_BACKOFF_MS_CONFIG = "kafka.retry.backoff.ms";
 
     private static final String OAUTH2_ACCESS_TOKEN_URL_CONFIG = "oauth2.access.token.url";
-    private static final String OAUTH2_GRANT_TYPE_KEY_CONFIG = "oauth2.grant_type.key";
-    private static final String OAUTH2_GRANT_TYPE_CONFIG = "oauth2.grant_type";
-    private static final String OAUTH2_CLIENT_ID_KEY_CONFIG = "oauth2.client.id.key";
+    private static final String OAUTH2_GRANT_TYPE_KEY_CONFIG = "oauth2.request.grant.type.property";
+    private static final String OAUTH2_GRANT_TYPE_CONFIG = "oauth2.grant.type";
+    private static final String OAUTH2_CLIENT_ID_KEY_CONFIG = "oauth2.request.client.id.property";
     private static final String OAUTH2_CLIENT_ID_CONFIG = "oauth2.client.id";
-    private static final String OAUTH2_CLIENT_SECRET_KEY_CONFIG = "oauth2.client.secret.key";
+    private static final String OAUTH2_CLIENT_SECRET_KEY_CONFIG = "oauth2.request.client.secret.property";
     private static final String OAUTH2_CLIENT_SECRET_CONFIG = "oauth2.client.secret";
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
