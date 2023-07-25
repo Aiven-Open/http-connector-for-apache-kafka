@@ -49,11 +49,11 @@ public class HttpSinkConfig extends AbstractConfig {
     public static final String KAFKA_RETRY_BACKOFF_MS_CONFIG = "kafka.retry.backoff.ms";
 
     private static final String OAUTH2_ACCESS_TOKEN_URL_CONFIG = "oauth2.access.token.url";
-    private static final String OAUTH2_GRANT_TYPE_KEY_CONFIG = "oauth2.request.grant.type.property";
+    private static final String OAUTH2_GRANT_TYPE_PROP_CONFIG = "oauth2.request.grant.type.property";
     private static final String OAUTH2_GRANT_TYPE_CONFIG = "oauth2.grant.type";
-    private static final String OAUTH2_CLIENT_ID_KEY_CONFIG = "oauth2.request.client.id.property";
+    private static final String OAUTH2_CLIENT_ID_PROP_CONFIG = "oauth2.request.client.id.property";
     private static final String OAUTH2_CLIENT_ID_CONFIG = "oauth2.client.id";
-    private static final String OAUTH2_CLIENT_SECRET_KEY_CONFIG = "oauth2.request.client.secret.property";
+    private static final String OAUTH2_CLIENT_SECRET_PROP_CONFIG = "oauth2.request.client.secret.property";
     private static final String OAUTH2_CLIENT_SECRET_CONFIG = "oauth2.client.secret";
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
@@ -203,14 +203,12 @@ public class HttpSinkConfig extends AbstractConfig {
                 groupCounter++,
                 ConfigDef.Width.LONG,
                 OAUTH2_ACCESS_TOKEN_URL_CONFIG,
-                List.of(OAUTH2_GRANT_TYPE_KEY_CONFIG, OAUTH2_GRANT_TYPE_CONFIG, OAUTH2_CLIENT_ID_KEY_CONFIG,
-                        OAUTH2_CLIENT_ID_CONFIG,
-                        OAUTH2_CLIENT_SECRET_KEY_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
+                List.of(OAUTH2_GRANT_TYPE_PROP_CONFIG, OAUTH2_GRANT_TYPE_CONFIG, OAUTH2_CLIENT_ID_PROP_CONFIG,
+                        OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_PROP_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG,
                         OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
-        configDef.define(
-                OAUTH2_GRANT_TYPE_KEY_CONFIG,
+        configDef.define(OAUTH2_GRANT_TYPE_PROP_CONFIG,
                 ConfigDef.Type.STRING,
                 "grant_type",
                 new ConfigDef.NonEmptyStringWithoutControlChars() {
@@ -223,8 +221,7 @@ public class HttpSinkConfig extends AbstractConfig {
                 "The grant type Key used for fetching an access token.",
                 CONNECTION_GROUP,
                 groupCounter++,
-                ConfigDef.Width.LONG,
-                OAUTH2_GRANT_TYPE_KEY_CONFIG,
+                ConfigDef.Width.LONG, OAUTH2_GRANT_TYPE_PROP_CONFIG,
                 List.of(OAUTH2_GRANT_TYPE_CONFIG)
         );
         configDef.define(
@@ -244,8 +241,7 @@ public class HttpSinkConfig extends AbstractConfig {
                 ConfigDef.Width.LONG,
                 OAUTH2_GRANT_TYPE_CONFIG
         );
-        configDef.define(
-                OAUTH2_CLIENT_ID_KEY_CONFIG,
+        configDef.define(OAUTH2_CLIENT_ID_PROP_CONFIG,
                 ConfigDef.Type.STRING,
                 "client_id",
                 new ConfigDef.NonEmptyStringWithoutControlChars() {
@@ -258,8 +254,7 @@ public class HttpSinkConfig extends AbstractConfig {
                 "The client id Key used for fetching an access token.",
                 CONNECTION_GROUP,
                 groupCounter++,
-                ConfigDef.Width.LONG,
-                OAUTH2_CLIENT_ID_KEY_CONFIG,
+                ConfigDef.Width.LONG, OAUTH2_CLIENT_ID_PROP_CONFIG,
                 List.of(OAUTH2_CLIENT_ID_CONFIG)
         );
         configDef.define(
@@ -282,16 +277,14 @@ public class HttpSinkConfig extends AbstractConfig {
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG,
                         OAUTH2_CLIENT_SCOPE_CONFIG, OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
         );
-        configDef.define(
-                OAUTH2_CLIENT_SECRET_KEY_CONFIG,
+        configDef.define(OAUTH2_CLIENT_SECRET_PROP_CONFIG,
                 Type.STRING,
                 "client_secret",
                 ConfigDef.Importance.HIGH,
                 "The secret Key used for fetching an access token.",
                 CONNECTION_GROUP,
                 groupCounter++,
-                ConfigDef.Width.LONG,
-                OAUTH2_CLIENT_SECRET_KEY_CONFIG,
+                ConfigDef.Width.LONG, OAUTH2_CLIENT_SECRET_PROP_CONFIG,
                 List.of(OAUTH2_CLIENT_SECRET_CONFIG)
         );
         configDef.define(
@@ -598,8 +591,8 @@ public class HttpSinkConfig extends AbstractConfig {
     }
 
     private void handleMissingConfigurationForOAuth2() {
-        Stream.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_GRANT_TYPE_KEY_CONFIG, OAUTH2_GRANT_TYPE_CONFIG,
-                      OAUTH2_CLIENT_ID_KEY_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_KEY_CONFIG)
+        Stream.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_GRANT_TYPE_PROP_CONFIG, OAUTH2_GRANT_TYPE_CONFIG,
+                  OAUTH2_CLIENT_ID_PROP_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_PROP_CONFIG)
               .filter(configKey -> getString(configKey) == null || getString(configKey).isBlank())
               .findFirst()
               .ifPresent(missingConfiguration -> {
@@ -702,24 +695,24 @@ public class HttpSinkConfig extends AbstractConfig {
         }
     }
 
-    public final String oauth2GrantTypeKey() {
-        return getString(OAUTH2_GRANT_TYPE_KEY_CONFIG);
+    public final String oauth2GrantTypeProperty() {
+        return getString(OAUTH2_GRANT_TYPE_PROP_CONFIG);
     }
 
     public final String oauth2GrantType() {
         return getString(OAUTH2_GRANT_TYPE_CONFIG);
     }
 
-    public final String oauth2ClientIdKey() {
-        return getString(OAUTH2_CLIENT_ID_KEY_CONFIG);
+    public final String oauth2ClientIdProperty() {
+        return getString(OAUTH2_CLIENT_ID_PROP_CONFIG);
     }
 
     public final String oauth2ClientId() {
         return getString(OAUTH2_CLIENT_ID_CONFIG);
     }
 
-    public final String oauth2ClientSecretKey() {
-        return getString(OAUTH2_CLIENT_SECRET_KEY_CONFIG);
+    public final String oauth2ClientSecretProperty() {
+        return getString(OAUTH2_CLIENT_SECRET_PROP_CONFIG);
     }
 
     public final Password oauth2ClientSecret() {

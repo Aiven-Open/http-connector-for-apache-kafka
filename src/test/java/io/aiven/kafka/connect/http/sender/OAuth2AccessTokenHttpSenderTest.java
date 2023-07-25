@@ -182,7 +182,7 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new AccessTokenHttpSender(config, mockedClient));
+        final var httpSender = Mockito.spy(new OAuth2AccessTokenHttpSender(config, mockedClient));
 
         // Trigger the client
         final List<String> messages =

@@ -18,50 +18,52 @@ package io.aiven.kafka.connect.http.sender.request;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.StringJoiner;
 
-public class OAuth2Form {
+public class OAuth2AccessTokenRequestForm {
 
     private static final String SCOPE = "scope";
-    private final StringJoiner stringJoiner = new StringJoiner("&");
 
-    private final String grantTypeFormField;
+    private final String grantTypeProperty;
     private final String grantType;
 
     private final String scope;
-    private final String clientIdFormField;
+    private final String clientIdProperty;
     private final String clientId;
 
-    private final String clientSecretFormField;
+    private final String clientSecretProperty;
     private final String clientSecret;
 
-    private OAuth2Form(
-        final String grantTypeFormField,
+    private OAuth2AccessTokenRequestForm(
+        final String grantTypeProperty,
         final String grantType,
         final String scope,
-        final String clientIdFormField,
+        final String clientIdProperty,
         final String clientId,
-        final String clientSecretFormField,
+        final String clientSecretProperty,
         final String clientSecret
     ) {
-        this.grantTypeFormField = grantTypeFormField;
+        this.grantTypeProperty = grantTypeProperty;
         this.grantType = grantType;
         this.scope = scope;
-        this.clientIdFormField = clientIdFormField;
+        this.clientIdProperty = clientIdProperty;
         this.clientId = clientId;
-        this.clientSecretFormField = clientSecretFormField;
+        this.clientSecretProperty = clientSecretProperty;
         this.clientSecret = clientSecret;
     }
 
     public String toBodyString() {
-        stringJoiner.add(encodeNameAndValue(grantTypeFormField, grantType));
+        final StringJoiner stringJoiner = new StringJoiner("&").add(encodeNameAndValue(grantTypeProperty, grantType));
         if (scope != null) {
             stringJoiner.add(encodeNameAndValue(SCOPE, scope));
         }
         if (clientId != null && clientSecret != null) {
+            Objects.requireNonNull(clientIdProperty, "The client id property is required");
+            Objects.requireNonNull(clientSecretProperty, "The client secret property is required");
             stringJoiner
-                .add(encodeNameAndValue(clientIdFormField, clientId))
-                .add(encodeNameAndValue(clientSecretFormField, clientSecret));
+                .add(encodeNameAndValue(clientIdProperty, clientId))
+                .add(encodeNameAndValue(clientSecretProperty, clientSecret));
         }
         return stringJoiner.toString();
     }
@@ -74,63 +76,65 @@ public class OAuth2Form {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
     public static class Builder {
 
-        private String grantTypeFormField;
+        private String grantTypeProperty;
         private String grantType;
 
         private String scope;
-        private String clientIdFormField;
+        private String clientIdProperty;
         private String clientId;
 
-        private String clientSecretFormField;
+        private String clientSecretProperty;
         private String clientSecret;
 
         private Builder() {
         }
 
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public Builder grantTypeFormField(final String grantTypeFormField) {
-            this.grantTypeFormField = grantTypeFormField;
+        public Builder withGrantTypeProperty(final String grantTypeProperty) {
+            this.grantTypeProperty = grantTypeProperty;
             return this;
         }
 
-        public Builder grantType(final String grantType) {
+        public Builder withGrantType(final String grantType) {
             this.grantType = grantType;
             return this;
         }
 
-        public Builder scope(final String scope) {
+        public Builder withScope(final String scope) {
             this.scope = scope;
             return this;
         }
 
-        public Builder clientIdFormField(final String clientIdFormField) {
-            this.clientIdFormField = clientIdFormField;
+        public Builder withClientIdProperty(final String clientIdProperty) {
+            this.clientIdProperty = clientIdProperty;
             return this;
         }
 
-        public Builder clientId(final String clientId) {
+        public Builder withClientId(final String clientId) {
             this.clientId = clientId;
             return this;
         }
 
-        public Builder clientSecretFormField(final String clientSecretFormField) {
-            this.clientSecretFormField = clientSecretFormField;
+        public Builder withClientSecretProperty(final String clientSecretProperty) {
+            this.clientSecretProperty = clientSecretProperty;
             return this;
         }
 
-        public Builder clientSecret(final String clientSecret) {
+        public Builder withClientSecret(final String clientSecret) {
             this.clientSecret = clientSecret;
             return this;
         }
 
-        public OAuth2Form build() {
-            return new OAuth2Form(grantTypeFormField, grantType, scope, clientIdFormField, clientId,
-                clientSecretFormField, clientSecret);
+        public OAuth2AccessTokenRequestForm build() {
+            Objects.requireNonNull(grantTypeProperty, "The grant type property is required");
+            Objects.requireNonNull(grantType, "The grant type is required");
+            return new OAuth2AccessTokenRequestForm(
+                grantTypeProperty, grantType, scope, clientIdProperty, clientId, clientSecretProperty, clientSecret);
         }
 
     }
