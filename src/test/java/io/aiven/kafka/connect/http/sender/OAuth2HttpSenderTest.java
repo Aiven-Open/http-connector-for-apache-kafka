@@ -58,7 +58,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
     static final String ACCESS_TOKEN_RESPONSE =
         "{\"access_token\": \"my_access_token\",\"token_type\": \"Bearer\",\"expires_in\": 7199}";
     @Mock
-    private OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender;
+    private OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender;
 
     @Test
     void shouldThrowExceptionWithoutConfig() {
@@ -69,7 +69,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
     void shouldBuildDefaultHttpRequest() throws Exception {
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
         when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         // Build the configuration
         final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
@@ -78,7 +78,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oAuth2AccessTokenHttpSender));
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
         // Trigger the client
         final List<String> messages = List.of("some message");
@@ -121,7 +121,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
 
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
         when(mockedAccessTokenResponse.body()).thenReturn(basicTokenResponse);
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         final var configWithToken = new HashMap<>(defaultConfig());
         configWithToken.put("oauth2.response.token.property", "some_token");
@@ -133,7 +133,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oAuth2AccessTokenHttpSender));
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
         // Trigger the client
         final List<String> messages = List.of("some message");
@@ -173,7 +173,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
     void reuseAccessToken() throws Exception {
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
         when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         // Build the configuration
         final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
@@ -182,7 +182,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oAuth2AccessTokenHttpSender));
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
         // Trigger the client
         final List<String> messages = List.of("some message 1", "some message 2");
@@ -213,7 +213,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
                     .orElse(null)).isEqualTo("Bearer my_access_token");
             });
 
-        verify(oAuth2AccessTokenHttpSender, times(1)).call();
+        verify(oauth2AccessTokenHttpSender, times(1)).call();
 
         // Check the messages have been sent once
         messages.forEach(
@@ -231,7 +231,8 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         final HttpResponse<String> mockedAccessTokenResponseRefreshed = mock(HttpResponse.class);
         when(mockedAccessTokenResponseRefreshed.body()).thenReturn(
             "{\"access_token\": \"my_refreshed_token\",\"token_type\": \"Bearer\",\"expires_in\": 7199}");
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse, mockedAccessTokenResponseRefreshed);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(
+            mockedAccessTokenResponse, mockedAccessTokenResponseRefreshed);
 
         // Mock a 2nd response with 401.
         final HttpResponse<String> errorResponse = mock(HttpResponse.class);
@@ -248,7 +249,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
             errorResponse, normalResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oAuth2AccessTokenHttpSender));
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
         // Trigger the client
         final List<String> messages = List.of("some message 1", "some message 2");
@@ -298,7 +299,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
             });
 
         // AccessToken only called 2 times on 3 attempts to send the messages
-        verify(oAuth2AccessTokenHttpSender, times(2)).call();
+        verify(oauth2AccessTokenHttpSender, times(2)).call();
 
         // Check the messages have been sent once
         messages.forEach(
@@ -311,7 +312,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         // first call to retrieve an access token
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
         when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         // Mock response with 401 for all responses after the 1st one from super method
         final HttpResponse<String> errorResponse = mock(HttpResponse.class);
@@ -326,8 +327,8 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
                 when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(errorResponse);
 
                 // Create a spy on the HttpSender implementation to capture methods parameters
-                final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient,
-                    oAuth2AccessTokenHttpSender));
+                final var httpSender =
+                    Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
                 // Trigger the client
                 final List<String> messages = List.of("some message 1", "some message 2");
@@ -337,7 +338,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
             .withMessage("Sending failed and no retries remain, stopping");
 
         // Only 2 calls were made with 1 retry
-        verify(oAuth2AccessTokenHttpSender, times(2)).call();
+        verify(oauth2AccessTokenHttpSender, times(2)).call();
     }
 
     @Test
@@ -346,16 +347,16 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         // Bad formed json
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
         when(mockedAccessTokenResponse.body()).thenReturn("not a json");
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         assertThatExceptionOfType(ConnectException.class)
             .isThrownBy(
-                () -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), null, oAuth2AccessTokenHttpSender).send(
+                () -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), null, oauth2AccessTokenHttpSender).send(
                     "a message"))
             .withMessage("Couldn't get OAuth2 access token");
 
         // Only 2 calls were made with 1 retry
-        verify(oAuth2AccessTokenHttpSender, times(1)).call();
+        verify(oauth2AccessTokenHttpSender, times(1)).call();
     }
 
     @Test
@@ -365,16 +366,16 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
         when(mockedAccessTokenResponse.body()).thenReturn(
             "{\"bad_property\": \"my_access_token\",\"token_type\": \"Bearer\",\"expires_in\": 7199}");
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         assertThatExceptionOfType(ConnectException.class)
             .isThrownBy(
-                () -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), null, oAuth2AccessTokenHttpSender).send(
+                () -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), null, oauth2AccessTokenHttpSender).send(
                     "a message"))
             .withMessage("Couldn't find access token property access_token in"
                          + " response properties: [bad_property, token_type, " + "expires_in]");
 
-        verify(oAuth2AccessTokenHttpSender, times(1)).call();
+        verify(oauth2AccessTokenHttpSender, times(1)).call();
     }
 
     @Test
@@ -382,7 +383,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         // first call to retrieve an access token
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
         when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
-        when(oAuth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         // Mock response with 500 for all responses after the 1st one from super method
         final HttpResponse<String> errorResponse = mock(HttpResponse.class);
@@ -397,8 +398,8 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
                 when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(errorResponse);
 
                 // Create a spy on the HttpSender implementation to capture methods parameters
-                final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient,
-                    oAuth2AccessTokenHttpSender));
+                final var httpSender =
+                    Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
                 // Trigger the client
                 final List<String> messages = List.of("some message 1", "some message 2");

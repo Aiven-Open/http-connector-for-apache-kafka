@@ -37,16 +37,16 @@ import org.slf4j.LoggerFactory;
 class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
 
     OAuth2HttpSender(
-        final HttpSinkConfig config, final HttpClient httpClient, final OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender
+        final HttpSinkConfig config,
+        final HttpClient httpClient,
+        final OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender
     ) {
-        super(config, new OAuth2AuthHttpRequestBuilder(config, oAuth2AccessTokenHttpSender), httpClient);
+        super(config, new OAuth2AuthHttpRequestBuilder(config, oauth2AccessTokenHttpSender), httpClient);
     }
 
     @Override
     protected HttpResponse<String> sendWithRetries(
-        final Builder requestBuilder,
-        final HttpResponseHandler originHttpResponseHandler,
-        final int retries
+        final Builder requestBuilder, final HttpResponseHandler originHttpResponseHandler, final int retries
     ) {
         // This handler allows to request a new access token if a 401 occurs, meaning the session might be expired
         final HttpResponseHandler handler = (response, remainingRetries) -> {
@@ -69,25 +69,28 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
         private final HttpSinkConfig config;
-        private final OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender;
+        private final OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender;
 
         private String accessToken;
 
-        OAuth2AuthHttpRequestBuilder(final HttpSinkConfig config, final OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender) {
+        OAuth2AuthHttpRequestBuilder(
+            final HttpSinkConfig config,
+            final OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender
+        ) {
             this.config = config;
-            this.oAuth2AccessTokenHttpSender = oAuth2AccessTokenHttpSender;
+            this.oauth2AccessTokenHttpSender = oauth2AccessTokenHttpSender;
         }
 
         @Override
         public Builder build(final HttpSinkConfig config) {
-            return super
-                .build(config)
-                // We need to retrieve an access token first
-                .header(HEADER_AUTHORIZATION, requestAccessToken());
+            return super.build(config)
+                        // We need to retrieve an access token first
+                        .header(HEADER_AUTHORIZATION, requestAccessToken());
         }
 
         /**
          * When expired, reinitialize the current token, request a new one and update the request builder
+         *
          * @param requestBuilder the request builder used to call the protected URI
          */
         void renewAccessToken(final HttpRequest.Builder requestBuilder) {
@@ -97,6 +100,7 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
 
         /**
          * Retrieves the current access token or requests it if none is defined
+         *
          * @return an access token
          */
         private String requestAccessToken() {
@@ -109,7 +113,7 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
             try {
                 // Whenever the access token is null (not initialized yet or expired), call the AccessTokenHttpSender
                 // implementation to request one
-                final var response = oAuth2AccessTokenHttpSender.call();
+                final var response = oauth2AccessTokenHttpSender.call();
                 accessToken = buildAccessTokenAuthHeader(response.body());
             } catch (final IOException e) {
                 throw new ConnectException("Couldn't get OAuth2 access token", e);
