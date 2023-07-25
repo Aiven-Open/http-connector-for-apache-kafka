@@ -601,7 +601,7 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public BehaviorOnNullValue behaviorOnNullValues() {
         return getString(BEHAVIOR_ON_NULL_VALUES) != null
-                ? BehaviorOnNullValue.valueOf(getString(BEHAVIOR_ON_NULL_VALUES)) : BEHAVIOR_ON_NULL_VALUES_DEFAULT;
+                ? BehaviorOnNullValue.valueOf(getString(BEHAVIOR_ON_NULL_VALUES).toUpperCase()) : BEHAVIOR_ON_NULL_VALUES_DEFAULT;
     }
 
     // White space is significant for our batch delimiters but ConfigKey trims it out
