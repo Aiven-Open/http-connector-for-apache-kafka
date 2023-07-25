@@ -74,6 +74,9 @@ public class HttpSinkConfig extends AbstractConfig {
 
     private static final String ERRORS_GROUP = "Errors Handling";
     private static final String ERRORS_TOLERANCE = "errors.tolerance";
+    private static final String BEHAVIOR_ON_NULL_VALUES = "behavior.on.null.values";
+    private static final BehaviorOnNullValue BEHAVIOR_ON_NULL_VALUES_DEFAULT = BehaviorOnNullValue.FAIL;
+
 
     public static ConfigDef configDef() {
         final ConfigDef configDef = new ConfigDef();
@@ -480,8 +483,20 @@ public class HttpSinkConfig extends AbstractConfig {
             ERRORS_GROUP,
             groupCounter++,
             ConfigDef.Width.SHORT,
-            HTTP_TIMEOUT_CONFIG
+            ERRORS_TOLERANCE
 
+        );
+        configDef.define(
+            BEHAVIOR_ON_NULL_VALUES,
+            ConfigDef.Type.STRING,
+            null,
+            ConfigDef.Importance.LOW,
+            "How to handle records with null value (that is, Kafka tombstone records)."
+               + " Valid Values: one of [fail, log, ignore]. Default is ignore",
+            ERRORS_GROUP,
+            groupCounter,
+            ConfigDef.Width.SHORT,
+            BEHAVIOR_ON_NULL_VALUES
         );
     }
 
@@ -582,6 +597,11 @@ public class HttpSinkConfig extends AbstractConfig {
     // currently just getting this for a configuration check
     private final String errorsTolerance() {
         return getString(ERRORS_TOLERANCE) != null ? getString(ERRORS_TOLERANCE) : "";
+    }
+
+    public BehaviorOnNullValue behaviorOnNullValues() {
+        return getString(BEHAVIOR_ON_NULL_VALUES) != null
+                ? BehaviorOnNullValue.valueOf(getString(BEHAVIOR_ON_NULL_VALUES)) : BEHAVIOR_ON_NULL_VALUES_DEFAULT;
     }
 
     // White space is significant for our batch delimiters but ConfigKey trims it out

@@ -17,8 +17,10 @@
 package io.aiven.kafka.connect.http;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
@@ -26,6 +28,7 @@ import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 
+import io.aiven.kafka.connect.http.config.BehaviorOnNullValue;
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import io.aiven.kafka.connect.http.recordsender.RecordSender;
 import io.aiven.kafka.connect.http.sender.HttpSender;
@@ -40,15 +43,17 @@ public final class HttpSinkTask extends SinkTask {
     private RecordSender recordSender;
     private ErrantRecordReporter reporter;
 
+    private BehaviorOnNullValue behaviorOnNullValue;
+
     // flag for legacy support (configured for batch mode, not using errors.tolerance)
-    private boolean useLegacySend;
+    private boolean useBatchSend;
 
     // required by Connect
     public HttpSinkTask() {
         this(null);
     }
 
-    protected HttpSinkTask(final HttpSender httpSender) {
+    HttpSinkTask(final HttpSender httpSender) {
         this.httpSender = httpSender;
     }
 
@@ -62,7 +67,8 @@ public final class HttpSinkTask extends SinkTask {
 
         recordSender = RecordSender.createRecordSender(httpSender, config);
 
-        this.useLegacySend = config.batchingEnabled();
+        this.useBatchSend = config.batchingEnabled();
+        this.behaviorOnNullValue = config.behaviorOnNullValues();
 
         if (Objects.nonNull(config.kafkaRetryBackoffMs())) {
             context.timeout(config.kafkaRetryBackoffMs());
@@ -85,36 +91,48 @@ public final class HttpSinkTask extends SinkTask {
     public void put(final Collection<SinkRecord> records) {
         log.debug("Received {} records", records.size());
 
-        if (!records.isEmpty()) {
-            // use the legacy send if batch is enabled
-            if (this.useLegacySend) {
-                for (final SinkRecord record : records) {
-                    if (record.value() == null) {
-                        throw new DataException("Record value must not be null");
-                    }
-                }
+        if (records.isEmpty()) {
+            return;
+        }
 
-                recordSender.send(records);
-            } else {
-                // send records to the sender one at a time
-                for (final SinkRecord record : records) {
-                    if (record.value() == null) {
-                        throw new DataException("Record value must not be null");
-                    }
+        records.stream().filter(HttpSinkTask::isTombstone).findFirst().ifPresent(r -> {
+            if (Objects.requireNonNull(behaviorOnNullValue) == BehaviorOnNullValue.LOG) {
+                log.warn("Record value was null at offset: {} partition: {}", r.kafkaOffset(), r.kafkaPartition());
+            } else if (behaviorOnNullValue == BehaviorOnNullValue.FAIL) {
+                throw new DataException("Record value must not be null at offset: " + r.kafkaOffset()
+                        + " and partition: " + r.kafkaPartition());
+            }
+        });
 
-                    try {
-                        recordSender.send(record);
-                    } catch (final ConnectException e) {
-                        if (reporter != null) {
-                            reporter.report(record, e);
-                        } else {
-                            // otherwise, re-throw the exception
-                            throw new ConnectException(e.getMessage());
-                        }
-                    }
-                }
+        final List<SinkRecord> recordsToSend = records.stream()
+                .filter(r -> !isTombstone(r))
+                .collect(Collectors.toList());
+        // use the legacy send if batch is enabled
+        if (this.useBatchSend) {
+            recordSender.send(recordsToSend);
+        } else {
+            // send records to the sender one at a time
+            for (final SinkRecord r : recordsToSend) {
+                singleSend(r);
             }
         }
+    }
+
+    private void singleSend(final SinkRecord r) {
+        try {
+            recordSender.send(r);
+        } catch (final ConnectException e) {
+            if (reporter != null) {
+                reporter.report(r, e);
+            } else {
+                // otherwise, re-throw the exception
+                throw new ConnectException(e.getMessage());
+            }
+        }
+    }
+
+    private static boolean isTombstone(final SinkRecord r) {
+        return r.value() == null;
     }
 
     @Override
