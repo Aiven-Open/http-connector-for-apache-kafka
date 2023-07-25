@@ -31,9 +31,9 @@ public final class HttpSenderFactory {
             case STATIC:
                 return new StaticAuthHttpSender(config, HttpClient.newHttpClient());
             case OAUTH2:
-                final AccessTokenHttpSender accessTokenHttpSender =
-                        new AccessTokenHttpSender(config, HttpClient.newHttpClient());
-                return new OAuth2HttpSender(config, HttpClient.newHttpClient(), accessTokenHttpSender);
+                final OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender =
+                        new OAuth2AccessTokenHttpSender(config, HttpClient.newHttpClient());
+                return new OAuth2HttpSender(config, HttpClient.newHttpClient(), oAuth2AccessTokenHttpSender);
             default:
                 throw new ConnectException("Can't create HTTP sender for auth type: " + config.authorizationType());
         }

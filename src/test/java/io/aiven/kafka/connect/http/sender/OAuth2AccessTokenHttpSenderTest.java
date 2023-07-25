@@ -51,11 +51,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class AccessTokenHttpSenderTest extends HttpSenderTestUtils<AccessTokenHttpSender> {
+public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestUtils<OAuth2AccessTokenHttpSender> {
 
     @Test
     void shouldThrowExceptionWithoutConfig() {
-        assertThrows(NullPointerException.class, () -> new AccessTokenHttpSender(null, null));
+        assertThrows(NullPointerException.class, () -> new OAuth2AccessTokenHttpSender(null, null));
     }
 
     @Test
@@ -71,7 +71,7 @@ public class AccessTokenHttpSenderTest extends HttpSenderTestUtils<AccessTokenHt
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new AccessTokenHttpSender(config, mockedClient));
+        final var httpSender = Mockito.spy(new OAuth2AccessTokenHttpSender(config, mockedClient));
 
         // Trigger the client
         final List<String> messages = List.of("grant_type=client_credentials");
@@ -123,7 +123,7 @@ public class AccessTokenHttpSenderTest extends HttpSenderTestUtils<AccessTokenHt
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new AccessTokenHttpSender(config, mockedClient));
+        final var httpSender = Mockito.spy(new OAuth2AccessTokenHttpSender(config, mockedClient));
 
         // Trigger the client
         final List<String> messages =
@@ -178,7 +178,7 @@ public class AccessTokenHttpSenderTest extends HttpSenderTestUtils<AccessTokenHt
                 when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(errorResponse);
 
                 // Create a spy on the HttpSender implementation to capture methods parameters
-                final var httpSender = Mockito.spy(new AccessTokenHttpSender(config, mockedClient));
+                final var httpSender = Mockito.spy(new OAuth2AccessTokenHttpSender(config, mockedClient));
 
                 // Trigger the client
                 final List<String> messages = List.of("some message 1", "some message 2");

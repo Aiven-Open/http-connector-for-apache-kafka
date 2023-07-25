@@ -33,9 +33,9 @@ import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import static io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode.HEADER;
 import static io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode.URL;
 
-class AccessTokenHttpSender extends AbstractHttpSender implements HttpSender {
+class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSender {
 
-    AccessTokenHttpSender(final HttpSinkConfig config, final HttpClient httpClient) {
+    OAuth2AccessTokenHttpSender(final HttpSinkConfig config, final HttpClient httpClient) {
         super(config, new AccessTokenHttpRequestBuilder(), httpClient);
     }
 

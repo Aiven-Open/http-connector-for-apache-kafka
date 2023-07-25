@@ -37,9 +37,9 @@ import org.slf4j.LoggerFactory;
 class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
 
     OAuth2HttpSender(
-        final HttpSinkConfig config, final HttpClient httpClient, final AccessTokenHttpSender accessTokenHttpSender
+        final HttpSinkConfig config, final HttpClient httpClient, final OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender
     ) {
-        super(config, new OAuth2AuthHttpRequestBuilder(config, accessTokenHttpSender), httpClient);
+        super(config, new OAuth2AuthHttpRequestBuilder(config, oAuth2AccessTokenHttpSender), httpClient);
     }
 
     @Override
@@ -69,13 +69,13 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
         private final HttpSinkConfig config;
-        private final AccessTokenHttpSender accessTokenHttpSender;
+        private final OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender;
 
         private String accessToken;
 
-        OAuth2AuthHttpRequestBuilder(final HttpSinkConfig config, final AccessTokenHttpSender accessTokenHttpSender) {
+        OAuth2AuthHttpRequestBuilder(final HttpSinkConfig config, final OAuth2AccessTokenHttpSender oAuth2AccessTokenHttpSender) {
             this.config = config;
-            this.accessTokenHttpSender = accessTokenHttpSender;
+            this.oAuth2AccessTokenHttpSender = oAuth2AccessTokenHttpSender;
         }
 
         @Override
@@ -83,7 +83,7 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
             return super
                 .build(config)
                 // We need to retrieve an access token first
-                .header(HEADER_AUTHORIZATION, getAccessToken());
+                .header(HEADER_AUTHORIZATION, requestAccessToken());
         }
 
         /**
@@ -92,14 +92,14 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
          */
         void renewAccessToken(final HttpRequest.Builder requestBuilder) {
             this.accessToken = null;
-            requestBuilder.setHeader(HttpRequestBuilder.HEADER_AUTHORIZATION, this.getAccessToken());
+            requestBuilder.setHeader(HttpRequestBuilder.HEADER_AUTHORIZATION, this.requestAccessToken());
         }
 
         /**
          * Retrieves the current access token or requests it if none is defined
          * @return an access token
          */
-        private String getAccessToken() {
+        private String requestAccessToken() {
             // Re-use the access token if it's already defined
             if (this.accessToken != null) {
                 return this.accessToken;
@@ -109,7 +109,7 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
             try {
                 // Whenever the access token is null (not initialized yet or expired), call the AccessTokenHttpSender
                 // implementation to request one
-                final var response = accessTokenHttpSender.call();
+                final var response = oAuth2AccessTokenHttpSender.call();
                 accessToken = buildAccessTokenAuthHeader(response.body());
             } catch (final IOException e) {
                 throw new ConnectException("Couldn't get OAuth2 access token", e);
