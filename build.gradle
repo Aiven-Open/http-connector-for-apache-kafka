@@ -66,7 +66,7 @@ wrapper {
 ext {
     moduleName = "io.aiven.kafka.connect.http"
 
-    avroVersion = "1.9.2" // Version 1.9.2 brings Jackson 2.10.2 package for Avro
+    avroVersion = "1.11.2" // Version 1.9.2 brings Jackson 2.10.2 package for Avro
     confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.0.2 to match Kafka 2.6.
                                        // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
     hamcrestVersion = "2.2"
