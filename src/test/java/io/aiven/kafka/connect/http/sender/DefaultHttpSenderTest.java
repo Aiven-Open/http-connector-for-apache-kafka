@@ -49,24 +49,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHttpSender> {
+public class DefaultHttpSenderTest extends HttpSenderTestUtils<DefaultHttpSender> {
 
     @Test
     void shouldThrowExceptionWithoutConfig() {
-        assertThrows(NullPointerException.class, () -> new StaticAuthHttpSender(null, null));
+        assertThrows(NullPointerException.class, () -> new DefaultHttpSender(null, null));
     }
 
     @Test
-    void shouldBuildDefaultStaticHttpRequest() throws Exception {
+    void shouldBuildDefaultHttpRequest() throws Exception {
 
         // Build the configuration
         final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
 
-        // Mock the Client and Response
+        // Mock the Http Client and Http Response
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new StaticAuthHttpSender(config, mockedClient));
+        final var httpSender = Mockito.spy(new DefaultHttpSender(config, mockedClient));
 
         // Trigger the client
         final List<String> messages = List.of("some message");
@@ -93,20 +93,16 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHtt
                 assertThat(httpRequest
                     .headers()
                     .firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE)).isEmpty();
-                assertThat(httpRequest
-                    .headers()
-                    .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
-                    .orElse(null)).isEqualTo("Bearer myToken");
             });
 
-        // Check the message have been sent once
+        // Check the messages have been sent once
         messages.forEach(
             message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
 
     }
 
     @Test
-    void shouldBuildCustomStaticHttpRequest() throws Exception {
+    void shouldBuildCustomHttpRequest() throws Exception {
         final var configBase = new HashMap<>(defaultConfig());
         configBase.put("http.headers.content.type", "application/json");
         configBase.put("http.headers.additional", "header1:value1,header2:value2");
@@ -118,7 +114,7 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHtt
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
         // Create a spy on the HttpSender implementation to capture methods parameters
-        final var httpSender = Mockito.spy(new StaticAuthHttpSender(config, mockedClient));
+        final var httpSender = Mockito.spy(new DefaultHttpSender(config, mockedClient));
 
         // Trigger the client
         final List<String> messages = List.of("some message");
@@ -143,10 +139,6 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHtt
                     .hasSeconds(config.httpTimeout());
                 assertThat(httpRequest.method()).isEqualTo("POST");
 
-                assertThat(httpRequest
-                    .headers()
-                    .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
-                    .orElse(null)).isEqualTo("Bearer myToken");
                 assertThat(httpRequest
                     .headers()
                     .firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE)
@@ -175,6 +167,7 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHtt
 
         assertThatExceptionOfType(ConnectException.class)
             .isThrownBy(() -> {
+
                 // Build the configuration
                 final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
 
@@ -182,7 +175,7 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHtt
                 when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(errorResponse);
 
                 // Create a spy on the HttpSender implementation to capture methods parameters
-                final var httpSender = Mockito.spy(new StaticAuthHttpSender(config, mockedClient));
+                final var httpSender = Mockito.spy(new DefaultHttpSender(config, mockedClient));
 
                 // Trigger the client
                 final List<String> messages = List.of("some message 1", "some message 2");
@@ -193,10 +186,7 @@ public class StaticTokenHttpSenderTest extends HttpSenderTestUtils<StaticAuthHtt
     }
 
     private Map<String, String> defaultConfig() {
-        return Map.of("http.url", "http://localhost:42", "http.authorization.type", "static",
-            "http.headers.authorization", "Bearer myToken");
+        return Map.of("http.url", "http://localhost:42", "http.authorization.type", "none");
     }
 
 }
-
-
