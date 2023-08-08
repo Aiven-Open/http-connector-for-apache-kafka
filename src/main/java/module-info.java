@@ -1,8 +1,12 @@
 module io.aiven.kafka.connect.http {
-    requires org.slf4j;
+    // http
     requires java.net.http;
+    requires com.fasterxml.jackson.databind;
+    // kafka
     requires static kafka.clients;
     requires static connect.api;
-    requires com.fasterxml.jackson.databind;
+    requires connect.json;
+    // tooling
+    requires org.slf4j;
     requires com.github.spotbugs.annotations;
 }
