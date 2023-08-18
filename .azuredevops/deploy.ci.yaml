@@ -12,6 +12,7 @@ pool:
 
 steps:
 - task: Gradle@2
+  displayName: "Build kafka http connector"
   inputs:
     workingDirectory: ''
     gradleWrapperFile: 'gradlew'
@@ -22,13 +23,20 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/TEST-*.xml'
     tasks: 'build'
-- task: Bash@3
+- task: PowerShell@2
+  displayName: "Add productionversion as build tag"
   inputs:
     targetType: 'inline'
-    script: |      
-      ls $(Build.SourcesDirectory)/build/distributions/
+    script: |
+      # Extract version from gradle.properties
+      $text = Get-Content "$(Build.SourcesDirectory)/gradle.properties" | Out-String
+      $text -match '=([0-9.]+)-'
+      $rversion=$Matches.1
+      Write-Host "Found version $rversion"
+      Write-Host "##vso[build.addbuildtag]ProductVersion_$rversion"
 - task: PublishBuildArtifacts@1
-  enabled: false
+  displayName: "Publish jars to azure devops artifacts"
+  enabled: true
   inputs:
     PathtoPublish: '$(Build.SourcesDirectory)/build/distributions'
     ArtifactName: 'drop'
