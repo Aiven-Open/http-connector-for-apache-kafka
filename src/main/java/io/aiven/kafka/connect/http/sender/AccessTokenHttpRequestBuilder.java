@@ -34,7 +34,7 @@ class AccessTokenHttpRequestBuilder implements HttpRequestBuilder {
     }
 
     @Override
-    public HttpRequest.Builder build(final HttpSinkConfig config) {
+    public HttpRequest.Builder build(final HttpSinkConfig config, final String key) {
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(config.oauth2AccessTokenUri(), "oauth2AccessTokenUri");
         final var accessTokenRequestBuilder = HttpRequest

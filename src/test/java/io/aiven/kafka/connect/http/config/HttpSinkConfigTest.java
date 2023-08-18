@@ -61,6 +61,7 @@ final class HttpSinkConfigTest {
         final HttpSinkConfig config = new HttpSinkConfig(properties);
         assertThat(config)
                 .returns(new URI("http://localhost:8090"), from(HttpSinkConfig::httpUri))
+                .returns(null, from(HttpSinkConfig::httpUpdateUrl))
                 .returns(AuthorizationType.NONE, from(HttpSinkConfig::authorizationType))
                 .returns(null, from(HttpSinkConfig::headerContentType))
                 .returns(false, from(HttpSinkConfig::batchingEnabled))
@@ -579,4 +580,35 @@ final class HttpSinkConfigTest {
         config = new HttpSinkConfig(properties);
         assertThat(config.batchingEnabled()).isTrue();
     }
+
+
+    @Test
+    void correctUpdateUrlConfig() throws URISyntaxException {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.update.url", "http://localhost:8090?id=${key}",
+                "http.enable.update.url", "true",
+                "http.authorization.type", "none"
+        );
+
+        final HttpSinkConfig config = new HttpSinkConfig(properties);
+        assertThat(config)
+                .returns(new URI("http://localhost:8090"), from(HttpSinkConfig::httpUri))
+                .returns("http://localhost:8090?id=${key}", from(HttpSinkConfig::httpUpdateUrl))
+                .returns(AuthorizationType.NONE, from(HttpSinkConfig::authorizationType))
+                .returns(null, from(HttpSinkConfig::headerContentType))
+                .returns(false, from(HttpSinkConfig::batchingEnabled))
+                .returns(500, from(HttpSinkConfig::batchMaxSize))
+                .returns(1, from(HttpSinkConfig::maxRetries))
+                .returns(3000, from(HttpSinkConfig::retryBackoffMs))
+                .returns(Collections.emptyMap(), from(HttpSinkConfig::getAdditionalHeaders))
+                .returns(null, from(HttpSinkConfig::oauth2AccessTokenUri))
+                .returns(null, from(HttpSinkConfig::oauth2ClientId))
+                .returns(null, from(HttpSinkConfig::oauth2ClientSecret))
+                .returns(null, from(HttpSinkConfig::oauth2ClientScope))
+                .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
+                .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty))
+                .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs));
+    }
+
 }

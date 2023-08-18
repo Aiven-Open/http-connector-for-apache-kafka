@@ -16,8 +16,14 @@
 
 package io.aiven.kafka.connect.http.sender;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.http.HttpRequest;
 import java.time.Duration;
+
+import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
@@ -27,10 +33,19 @@ interface HttpRequestBuilder {
 
     String HEADER_CONTENT_TYPE = "Content-Type";
 
-    HttpRequest.Builder build(final HttpSinkConfig config);
+    HttpRequest.Builder build(final HttpSinkConfig config, final String key);
 
-    HttpRequestBuilder DEFAULT_HTTP_REQUEST_BUILDER = config -> {
-        final var httpRequest = HttpRequest.newBuilder(config.httpUri())
+    HttpRequestBuilder DEFAULT_HTTP_REQUEST_BUILDER = (config, key) -> {
+        URI reqUri = config.httpUri();
+        try {
+            if (config.updateUrlEnabled() && config.httpUpdateUrl() != null && key != null) {
+                reqUri = new URL(config.httpUpdateUrl().replace("${key}", key)).toURI();
+            }
+        } catch (final MalformedURLException | URISyntaxException e) {
+            throw new ConnectException(e);
+        }
+
+        final var httpRequest = HttpRequest.newBuilder(reqUri)
                 .timeout(Duration.ofSeconds(config.httpTimeout()));
         config.getAdditionalHeaders().forEach(httpRequest::header);
         if (config.headerContentType() != null) {
@@ -39,7 +54,7 @@ interface HttpRequestBuilder {
         return httpRequest;
     };
 
-    HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = config -> DEFAULT_HTTP_REQUEST_BUILDER.build(config)
+    HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = (config, key) -> DEFAULT_HTTP_REQUEST_BUILDER.build(config, key)
             .header(HEADER_AUTHORIZATION, config.headerAuthorization());
 
 }

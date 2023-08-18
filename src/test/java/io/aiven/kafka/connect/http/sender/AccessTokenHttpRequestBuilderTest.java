@@ -42,7 +42,7 @@ class AccessTokenHttpRequestBuilderTest {
         );
         final HttpSinkConfig config = new HttpSinkConfig(configBase);
         final var accessTokenRequest =
-                new AccessTokenHttpRequestBuilder().build(config).build();
+                new AccessTokenHttpRequestBuilder().build(config, null).build();
 
         assertThat(accessTokenRequest.uri()).isEqualTo(new URL("http://localhost:42/token").toURI());
 
@@ -74,7 +74,7 @@ class AccessTokenHttpRequestBuilderTest {
         );
         final HttpSinkConfig config = new HttpSinkConfig(configBase);
         final var accessTokenRequest =
-                new AccessTokenHttpRequestBuilder().build(config).build();
+                new AccessTokenHttpRequestBuilder().build(config, null).build();
 
         assertThat(accessTokenRequest.uri()).isEqualTo(new URL("http://localhost:42/token").toURI());
 

@@ -37,7 +37,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class HttpSinkConfig extends AbstractConfig {
     private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
-
+    private static final String HTTP_UPDATE_URL_CONFIG = "http.update.url";
+    private static final String HTTP_ENABLE_UPDATE_URL = "http.enable.update.url";
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
     private static final String HTTP_HEADERS_CONTENT_TYPE_CONFIG = "http.headers.content.type";
@@ -98,6 +99,31 @@ public class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.LONG,
             HTTP_URL_CONFIG
+        );
+
+        configDef.define(
+                HTTP_UPDATE_URL_CONFIG,
+                ConfigDef.Type.STRING,
+                null,
+                new UrlValidator(true),
+                ConfigDef.Importance.LOW,
+                "The URL to use for updating data",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                HTTP_UPDATE_URL_CONFIG
+        );
+
+        configDef.define(
+                HTTP_ENABLE_UPDATE_URL,
+                ConfigDef.Type.BOOLEAN,
+                false,
+                ConfigDef.Importance.LOW,
+                "Whether to use update url if key is set",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.SHORT,
+                HTTP_ENABLE_UPDATE_URL
         );
 
         configDef.define(
@@ -546,6 +572,14 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final URI httpUri() {
         return toURI(HTTP_URL_CONFIG);
+    }
+
+    public final String httpUpdateUrl() {
+        return getString(HTTP_UPDATE_URL_CONFIG);
+    }
+
+    public final boolean updateUrlEnabled() {
+        return getBoolean(HTTP_ENABLE_UPDATE_URL);
     }
 
     public final Long kafkaRetryBackoffMs() {

@@ -62,9 +62,13 @@ public class HttpSender {
     }
 
     public final void send(final String body) {
+        this.send(body, null);
+    }
+
+    public final void send(final String body, final String key) {
         final var requestBuilder =
                 httpRequestBuilder
-                        .build(config)
+                        .build(config, key)
                         .POST(HttpRequest.BodyPublishers.ofString(body));
         sendWithRetries(requestBuilder, HttpResponseHandler.ON_HTTP_ERROR_RESPONSE_HANDLER);
     }

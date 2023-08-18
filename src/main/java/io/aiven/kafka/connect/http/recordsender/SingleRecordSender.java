@@ -32,13 +32,21 @@ final class SingleRecordSender extends RecordSender {
     public void send(final Collection<SinkRecord> records) {
         for (final SinkRecord record : records) {
             final String body = recordValueConverter.convert(record);
-            httpSender.send(body);
+            String key = null;
+            if (record.key() != null) {
+                key = record.key().toString();
+            }
+            httpSender.send(body, key);
         }
     }
 
     @Override
     public void send(final SinkRecord record) {
         final String body = recordValueConverter.convert(record);
-        httpSender.send(body);
+        String key = null;
+        if (record.key() != null) {
+            key = record.key().toString();
+        }
+        httpSender.send(body, key);
     }
 }
