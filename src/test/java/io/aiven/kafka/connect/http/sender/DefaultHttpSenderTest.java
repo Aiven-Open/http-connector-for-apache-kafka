@@ -49,7 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class DefaultHttpSenderTest extends HttpSenderTestUtils<DefaultHttpSender> {
+public class DefaultHttpSenderTest extends HttpSenderTestBase<DefaultHttpSender> {
 
     @Test
     void shouldThrowExceptionWithoutConfig() {

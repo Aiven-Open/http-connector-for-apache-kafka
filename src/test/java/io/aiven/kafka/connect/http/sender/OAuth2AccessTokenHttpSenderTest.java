@@ -51,7 +51,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestUtils<OAuth2AccessTokenHttpSender> {
+public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2AccessTokenHttpSender> {
 
     @Test
     void shouldThrowExceptionWithoutConfig() {

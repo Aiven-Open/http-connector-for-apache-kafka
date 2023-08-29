@@ -42,10 +42,9 @@ abstract class AbstractHttpSender {
     protected AbstractHttpSender(
             final HttpSinkConfig config, final HttpRequestBuilder httpRequestBuilder, final HttpClient httpClient
     ) {
-        Objects.requireNonNull(config);
-        this.config = config;
-        this.httpRequestBuilder = httpRequestBuilder;
-        this.httpClient = httpClient;
+        this.config = Objects.requireNonNull(config);
+        this.httpRequestBuilder = Objects.requireNonNull(httpRequestBuilder);
+        this.httpClient = Objects.requireNonNull(httpClient);
     }
 
     public final HttpResponse<String> send(final String body) {

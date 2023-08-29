@@ -48,12 +48,13 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
+class OAuth2HttpSenderTest extends HttpSenderTestBase<OAuth2HttpSender> {
 
     static final String ACCESS_TOKEN_RESPONSE =
         "{\"access_token\": \"my_access_token\",\"token_type\": \"Bearer\",\"expires_in\": 7199}";
@@ -112,6 +113,8 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         // Check the messages have been sent once
         messages.forEach(
             message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message
+        verify(mockedClient, times(messages.size())).send(any(HttpRequest.class), any(BodyHandler.class));
     }
 
     @Test
@@ -166,6 +169,8 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         // Check the messages have been sent once
         messages.forEach(
             message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message
+        verify(mockedClient, times(messages.size())).send(any(HttpRequest.class), any(BodyHandler.class));
 
     }
 
@@ -218,6 +223,8 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         // Check the messages have been sent once
         messages.forEach(
             message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message
+        verify(mockedClient, times(messages.size())).send(any(HttpRequest.class), any(BodyHandler.class));
 
     }
 
@@ -304,6 +311,8 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         // Check the messages have been sent once
         messages.forEach(
             message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message and once more after having refreshed the token
+        verify(mockedClient, times(messages.size() + 1)).send(any(HttpRequest.class), any(BodyHandler.class));
     }
 
     @Test
@@ -342,7 +351,7 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
     }
 
     @Test
-    void throwsConnectExceptionForWrongAuthentication() {
+    void throwsConnectExceptionForWrongAuthentication() throws IOException, InterruptedException {
 
         // Bad formed json
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
@@ -350,17 +359,18 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         assertThatExceptionOfType(ConnectException.class)
-            .isThrownBy(
-                () -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), null, oauth2AccessTokenHttpSender).send(
-                    "a message"))
+            .isThrownBy(() -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), mockedClient,
+                oauth2AccessTokenHttpSender).send("a message"))
             .withMessage("Couldn't get OAuth2 access token");
 
         // Only 2 calls were made with 1 retry
         verify(oauth2AccessTokenHttpSender, times(1)).call();
+        // Httpclient is never called to send the message
+        verify(mockedClient, never()).send(any(HttpRequest.class), any(BodyHandler.class));
     }
 
     @Test
-    void throwsConnectExceptionForBadFormedAccessToken() {
+    void throwsConnectExceptionForBadFormedAccessToken() throws IOException, InterruptedException {
 
         // Unable to authenticate
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
@@ -369,13 +379,14 @@ class OAuth2HttpSenderTest extends HttpSenderTestUtils<OAuth2HttpSender> {
         when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         assertThatExceptionOfType(ConnectException.class)
-            .isThrownBy(
-                () -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), null, oauth2AccessTokenHttpSender).send(
-                    "a message"))
+            .isThrownBy(() -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), mockedClient,
+                oauth2AccessTokenHttpSender).send("a message"))
             .withMessage("Couldn't find access token property access_token in"
-                         + " response properties: [bad_property, token_type, " + "expires_in]");
+                         + " response properties: [bad_property, token_type, expires_in]");
 
         verify(oauth2AccessTokenHttpSender, times(1)).call();
+        // Httpclient is never called to send the message
+        verify(mockedClient, never()).send(any(HttpRequest.class), any(BodyHandler.class));
     }
 
     @Test
