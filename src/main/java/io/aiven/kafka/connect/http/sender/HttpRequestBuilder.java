@@ -17,7 +17,6 @@
 package io.aiven.kafka.connect.http.sender;
 
 import java.net.http.HttpRequest;
-import java.time.Duration;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
@@ -27,19 +26,6 @@ interface HttpRequestBuilder {
 
     String HEADER_CONTENT_TYPE = "Content-Type";
 
-    HttpRequest.Builder build(final HttpSinkConfig config);
-
-    HttpRequestBuilder DEFAULT_HTTP_REQUEST_BUILDER = config -> {
-        final var httpRequest = HttpRequest.newBuilder(config.httpUri())
-                .timeout(Duration.ofSeconds(config.httpTimeout()));
-        config.getAdditionalHeaders().forEach(httpRequest::header);
-        if (config.headerContentType() != null) {
-            httpRequest.header(HEADER_CONTENT_TYPE, config.headerContentType());
-        }
-        return httpRequest;
-    };
-
-    HttpRequestBuilder AUTH_HTTP_REQUEST_BUILDER = config -> DEFAULT_HTTP_REQUEST_BUILDER.build(config)
-            .header(HEADER_AUTHORIZATION, config.headerAuthorization());
+    HttpRequest.Builder build(HttpSinkConfig config);
 
 }

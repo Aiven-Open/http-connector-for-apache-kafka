@@ -28,7 +28,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import io.aiven.kafka.connect.http.recordsender.RecordSender;
-import io.aiven.kafka.connect.http.sender.HttpSender;
+import io.aiven.kafka.connect.http.sender.HttpSenderFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +50,7 @@ public final class HttpSinkTask extends SinkTask {
     public void start(final Map<String, String> props) {
         Objects.requireNonNull(props);
         final var config = new HttpSinkConfig(props);
-        final var httpSender = HttpSender.createHttpSender(config);
+        final var httpSender = HttpSenderFactory.createHttpSender(config);
         this.recordSender = RecordSender.createRecordSender(httpSender, config);
         this.useLegacySend = config.batchingEnabled();
 

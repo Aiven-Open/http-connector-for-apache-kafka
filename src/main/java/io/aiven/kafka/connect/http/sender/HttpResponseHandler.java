@@ -26,9 +26,9 @@ interface HttpResponseHandler {
 
     Logger LOGGER = LoggerFactory.getLogger(HttpResponseHandler.class);
 
-    void onResponse(final HttpResponse<String> response) throws IOException;
+    void onResponse(final HttpResponse<String> response, int remainingRetries) throws IOException;
 
-    HttpResponseHandler ON_HTTP_ERROR_RESPONSE_HANDLER = response -> {
+    HttpResponseHandler ON_HTTP_ERROR_RESPONSE_HANDLER = (response, remainingRetries) -> {
         if (response.statusCode() >= 400) {
             final var request = response.request();
             final var uri = request != null ? request.uri() : "UNKNOWN";

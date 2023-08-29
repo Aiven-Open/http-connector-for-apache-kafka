@@ -17,324 +17,413 @@
 package io.aiven.kafka.connect.http.sender;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
-import org.mockito.stubbing.Answer;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.any;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.STRICT_STUBS)
-class OAuth2HttpSenderTest {
+class OAuth2HttpSenderTest extends HttpSenderTestBase<OAuth2HttpSender> {
 
-    private static final String CONTENT_TYPE_VALUE = "application/json";
-
+    static final String ACCESS_TOKEN_RESPONSE =
+        "{\"access_token\": \"my_access_token\",\"token_type\": \"Bearer\",\"expires_in\": 7199}";
     @Mock
-    HttpClient mockedHttpClient;
-
-    final ObjectMapper objectMapper = new ObjectMapper();
+    private OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender;
 
     @Test
-    void buildAccessTokenAuthHeaderForDefaultSettings(@Mock final HttpResponse<String> accessTokenResponse)
-            throws IOException, InterruptedException {
-        final var config = defaultConfig();
-
-        final var httpSend =
-                new OAuth2HttpSender(
-                        new HttpSinkConfig(config),
-                        mockedHttpClient
-                );
-
-        final var requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-
-        final var accessTokenJson = Map.of(
-                "access_token", "bla-bla-bla"
-        );
-
-        when(accessTokenResponse.statusCode()).thenReturn(200);
-        when(accessTokenResponse.body()).thenReturn(objectMapper.writeValueAsString(accessTokenJson));
-        when(mockedHttpClient.<String>send(requestCaptor.capture(), any())).thenReturn(accessTokenResponse);
-
-        httpSend.send("SOME_BODY");
-
-        final var r = requestCaptor.getAllValues().get(1);
-        assertThat(r.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION))
-                .hasValue("Bearer bla-bla-bla");
+    void shouldThrowExceptionWithoutConfig() {
+        assertThrows(NullPointerException.class, () -> new OAuth2HttpSender(null, null, null));
     }
 
     @Test
-    void buildAccessTokenAuthHeaderFromCustomSettings(@Mock final HttpResponse<String> accessTokenResponse)
-            throws IOException, InterruptedException {
-        final var config = new HashMap<>(defaultConfig());
-        config.put("oauth2.client.authorization.mode", "url");
-        config.put("oauth2.client.scope", "a,b,c");
-        config.put("oauth2.response.token.property", "some_token");
+    void shouldBuildDefaultHttpRequest() throws Exception {
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
-        final var httpSend =
-                new OAuth2HttpSender(
-                        new HttpSinkConfig(config),
-                        mockedHttpClient
-                );
+        // Build the configuration
+        final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
 
-        final var requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        // Mock the Client and Response
+        when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
-        final var accessTokenJson = Map.of(
-                "some_token", "bla-bla-bla-bla",
-                "token_type", "Basic"
-        );
+        // Create a spy on the HttpSender implementation to capture methods parameters
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
-        when(accessTokenResponse.statusCode()).thenReturn(200);
-        when(accessTokenResponse.body()).thenReturn(objectMapper.writeValueAsString(accessTokenJson));
-        when(mockedHttpClient.<String>send(requestCaptor.capture(), any())).thenReturn(accessTokenResponse);
+        // Trigger the client
+        final List<String> messages = List.of("some message");
+        messages.forEach(httpSender::send);
 
-        httpSend.send("SOME_BODY");
+        // Capture the RequestBuilder
+        final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
+        verify(httpSender, atLeast(messages.size())).sendWithRetries(defaultHttpRequestBuilder.capture(),
+            any(HttpResponseHandler.class), anyInt());
 
-        final var r = requestCaptor.getAllValues().get(1);
-        assertThat(r.headers().firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION))
-                .hasValue("Basic bla-bla-bla-bla");
+        // Retrieve the builders and rebuild the HttpRequests to check the HttpRequest proper configuration
+        defaultHttpRequestBuilder
+            .getAllValues()
+            .stream()
+            .map(Builder::build)
+            .forEach(httpRequest -> {
+                // Generic Assertions
+                assertThat(httpRequest.uri()).isEqualTo(config.httpUri());
+                assertThat(httpRequest.timeout())
+                    .isPresent()
+                    .get(as(InstanceOfAssertFactories.DURATION))
+                    .hasSeconds(config.httpTimeout());
+                assertThat(httpRequest.method()).isEqualTo("POST");
+
+                assertThat(httpRequest
+                    .headers()
+                    .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
+                    .orElse(null)).isEqualTo("Bearer my_access_token");
+            });
+
+        // Check the messages have been sent once
+        messages.forEach(
+            message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message
+        verify(mockedClient, times(messages.size())).send(any(HttpRequest.class), any(BodyHandler.class));
     }
 
     @Test
-    void buildSpecifiedContentType(@Mock final HttpResponse<String> accessTokenResponse)
-            throws IOException, InterruptedException {
-        final var config = new HashMap<>(defaultConfig());
-        config.put("oauth2.client.authorization.mode", "url");
-        config.put("oauth2.client.scope", "a,b,c");
-        config.put("oauth2.response.token.property", "some_token");
-        config.put("http.headers.content.type", CONTENT_TYPE_VALUE);
+    void buildAccessTokenAuthHeaderFromCustomSettings() throws IOException, InterruptedException {
 
-        final var httpSend =
-                new OAuth2HttpSender(
-                        new HttpSinkConfig(config),
-                        mockedHttpClient
-                );
+        final String basicTokenResponse = "{\"some_token\": \"my_basic_token\",\"token_type\": \"Basic\"}";
 
-        final var requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn(basicTokenResponse);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
-        final var accessTokenJson = Map.of(
-                "some_token", "bla-bla-bla-bla",
-                "token_type", "Basic"
-        );
+        final var configWithToken = new HashMap<>(defaultConfig());
+        configWithToken.put("oauth2.response.token.property", "some_token");
 
-        when(accessTokenResponse.statusCode()).thenReturn(200);
-        when(accessTokenResponse.body()).thenReturn(objectMapper.writeValueAsString(accessTokenJson));
-        when(mockedHttpClient.<String>send(requestCaptor.capture(), any())).thenReturn(accessTokenResponse);
+        // Build the configuration
+        final HttpSinkConfig config = new HttpSinkConfig(configWithToken);
 
-        httpSend.send("SOME_BODY");
+        // Mock the Client and Response
+        when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
-        final var r = requestCaptor.getAllValues().get(1);
-        assertThat(r.headers().firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE))
-                .hasValue(CONTENT_TYPE_VALUE);
-    }
+        // Create a spy on the HttpSender implementation to capture methods parameters
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
-    @Test
-    void reuseAccessToken(@Mock final HttpResponse<String> response) throws Exception {
-        final var config = defaultConfig();
+        // Trigger the client
+        final List<String> messages = List.of("some message");
+        messages.forEach(httpSender::send);
 
-        final var httpSend =
-                new OAuth2HttpSender(
-                        new HttpSinkConfig(config),
-                        mockedHttpClient
-                );
+        // Capture the RequestBuilder
+        final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
+        verify(httpSender, atLeast(messages.size())).sendWithRetries(defaultHttpRequestBuilder.capture(),
+            any(HttpResponseHandler.class), anyInt());
 
-        final var requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        // Retrieve the builders and rebuild the HttpRequests to check the HttpRequest proper configuration
+        defaultHttpRequestBuilder
+            .getAllValues()
+            .stream()
+            .map(Builder::build)
+            .forEach(httpRequest -> {
+                assertThat(httpRequest.uri()).isEqualTo(config.httpUri());
+                assertThat(httpRequest.timeout())
+                    .isPresent()
+                    .get(as(InstanceOfAssertFactories.DURATION))
+                    .hasSeconds(config.httpTimeout());
+                assertThat(httpRequest.method()).isEqualTo("POST");
 
-        final var accessTokenJson = Map.of(
-                "access_token", "bla-bla-bla-bla"
-        );
+                assertThat(httpRequest
+                    .headers()
+                    .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
+                    .orElse(null)).isEqualTo("Basic my_basic_token");
+            });
 
-        when(response.statusCode()).thenReturn(200);
-        when(response.body()).thenReturn(objectMapper.writeValueAsString(accessTokenJson));
-        when(mockedHttpClient.<String>send(requestCaptor.capture(), any())).thenReturn(response);
-
-        httpSend.send("SOME_BODY");
-        verify(mockedHttpClient, times(2)).send(any(HttpRequest.class), any());
-        httpSend.send("SOME_BODY");
-        verify(mockedHttpClient, times(3)).send(any(HttpRequest.class), any());
+        // Check the messages have been sent once
+        messages.forEach(
+            message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message
+        verify(mockedClient, times(messages.size())).send(any(HttpRequest.class), any(BodyHandler.class));
 
     }
 
     @Test
-    void refreshAccessToken(@Mock final HttpResponse<String> response) throws Exception {
-        final var config = defaultConfig();
+    void reuseAccessToken() throws Exception {
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
-        final var httpSend =
-                new OAuth2HttpSender(
-                        new HttpSinkConfig(config),
-                        mockedHttpClient
-                );
+        // Build the configuration
+        final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
 
-        final var requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        // Mock the Client and Response
+        when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
 
-        when(mockedHttpClient.<String>send(requestCaptor.capture(), any()))
-                .thenAnswer(new Answer<HttpResponse<String>>() {
+        // Create a spy on the HttpSender implementation to capture methods parameters
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
 
-                    final Map<String, String> accessTokenJson = Map.of(
-                            "access_token", "bla-bla-bla-bla"
-                    );
-                    final Map<String, String> newAccessTokenJson = Map.of(
-                            "access_token", "bla-bla-bla-bla-bla"
-                    );
+        // Trigger the client
+        final List<String> messages = List.of("some message 1", "some message 2");
+        messages.forEach(httpSender::send);
 
-                    int accessTokenRequestCounter = 0;
+        // Capture the RequestBuilder
+        final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
+        verify(httpSender, atLeast(messages.size())).sendWithRetries(defaultHttpRequestBuilder.capture(),
+            any(HttpResponseHandler.class), anyInt());
 
-                    int messageRequestCounter = 0;
+        // Retrieve the builders and rebuild the HttpRequests to check the HttpRequest proper configuration
+        defaultHttpRequestBuilder
+            .getAllValues()
+            .stream()
+            .map(Builder::build)
+            .forEach(httpRequest -> {
+                // Generic Assertions
+                assertThat(httpRequest.uri()).isEqualTo(config.httpUri());
+                assertThat(httpRequest.timeout())
+                    .isPresent()
+                    .get(as(InstanceOfAssertFactories.DURATION))
+                    .hasSeconds(config.httpTimeout());
+                assertThat(httpRequest.method()).isEqualTo("POST");
 
-                    @Override
-                    public HttpResponse<String> answer(final InvocationOnMock invocation) throws Throwable {
-                        final var request = invocation.<HttpRequest>getArgument(0);
-                        if (request.uri().equals(new URI("http://localhost:42/token"))) {
-                            if (accessTokenRequestCounter == 1) {
-                                when(response.statusCode()).thenReturn(200);
-                                when(response.body())
-                                        .thenReturn(objectMapper.writeValueAsString(newAccessTokenJson));
-                            } else {
-                                when(response.statusCode()).thenReturn(200);
-                                when(response.body())
-                                        .thenReturn(objectMapper.writeValueAsString(accessTokenJson));
-                            }
-                            accessTokenRequestCounter++;
-                        } else {
-                            if (messageRequestCounter == 1) {
-                                when(response.statusCode()).thenReturn(401);
-                                when(response.body()).thenReturn("NOK");
-                            } else {
-                                when(response.statusCode()).thenReturn(200);
-                                when(response.body()).thenReturn("OK");
-                            }
-                            messageRequestCounter++;
-                        }
-                        return response;
-                    }
-                });
+                assertThat(httpRequest
+                    .headers()
+                    .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
+                    .orElse(null)).isEqualTo("Bearer my_access_token");
+            });
 
-        httpSend.send("SOME_BODY_1");
-        httpSend.send("SOME_BODY_2");
-        httpSend.send("SOME_BODY_3");
+        verify(oauth2AccessTokenHttpSender, times(1)).call();
 
-        assertThat(requestCaptor.getAllValues())
-                .map(HttpRequest::uri)
-                .filteredOnAssertions(uri ->
-                        assertThat(uri).hasToString("http://localhost:42/token"))
-                .hasSize(2);
-
-        assertThat(requestCaptor.getAllValues())
-                .filteredOnAssertions(req ->
-                        assertThat(req.uri()).hasToString("http://localhost:42"))
-                .allSatisfy(request ->
-                        assertThat(request.headers().allValues("Authorization")).hasSize(1));
+        // Check the messages have been sent once
+        messages.forEach(
+            message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message
+        verify(mockedClient, times(messages.size())).send(any(HttpRequest.class), any(BodyHandler.class));
 
     }
 
     @Test
-    void throwsConnectExceptionForNokToken(@Mock final HttpResponse<String> response)
-            throws IOException, InterruptedException {
-        final var config = defaultConfig();
+    void refreshAccessToken() throws Exception {
 
-        final var httpSend =
-                new OAuth2HttpSender(
-                        new HttpSinkConfig(config),
-                        mockedHttpClient
-                );
-        when(response.statusCode()).thenReturn(400);
-        when(response.body()).thenReturn("NOK");
-        when(mockedHttpClient.<String>send(any(HttpRequest.class), any()))
-                .thenReturn(response);
+        // first call to retrieve an access token
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
+        // second call to retrieve an access token
+        final HttpResponse<String> mockedAccessTokenResponseRefreshed = mock(HttpResponse.class);
+        when(mockedAccessTokenResponseRefreshed.body()).thenReturn(
+            "{\"access_token\": \"my_refreshed_token\",\"token_type\": \"Bearer\",\"expires_in\": 7199}");
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(
+            mockedAccessTokenResponse, mockedAccessTokenResponseRefreshed);
+
+        // Mock a 2nd response with 401.
+        final HttpResponse<String> errorResponse = mock(HttpResponse.class);
+        when(errorResponse.statusCode()).thenReturn(401);
+        // Mock a 2nd response with 401.
+        final HttpResponse<String> normalResponse = mock(HttpResponse.class);
+        when(normalResponse.statusCode()).thenReturn(200);
+
+        // Build the configuration
+        final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
+
+        // Mock the Client and Response
+        when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse,
+            errorResponse, normalResponse);
+
+        // Create a spy on the HttpSender implementation to capture methods parameters
+        final var httpSender = Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
+
+        // Trigger the client
+        final List<String> messages = List.of("some message 1", "some message 2");
+        messages.forEach(httpSender::send);
+
+        // Capture the RequestBuilder
+        final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
+        verify(httpSender, atLeast(messages.size())).sendWithRetries(defaultHttpRequestBuilder.capture(),
+            any(HttpResponseHandler.class), anyInt());
+
+        // Retrieve the builders and rebuild the HttpRequests to check the HttpRequest proper configuration
+        final List<HttpRequest> httpRequests = defaultHttpRequestBuilder
+            .getAllValues()
+            .stream()
+            .map(Builder::build)
+            .collect(Collectors.toList());
+
+        // 3 attempts were made
+        assertThat(httpRequests.size()).isEqualTo(3);
+        IntStream
+            .of(httpRequests.size() - 1)
+            .boxed()
+            .forEach(httpRequestIndex -> {
+                final HttpRequest httpRequest = httpRequests.get(httpRequestIndex);
+
+                assertThat(httpRequest.uri()).isEqualTo(config.httpUri());
+                assertThat(httpRequest.timeout())
+                    .isPresent()
+                    .get(as(InstanceOfAssertFactories.DURATION))
+                    .hasSeconds(config.httpTimeout());
+                assertThat(httpRequest.method()).isEqualTo("POST");
+
+                // First time the access token is my_access_token
+                if (httpRequestIndex == 0) {
+                    assertThat(httpRequest
+                        .headers()
+                        .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
+                        .orElse(null)).isEqualTo("Bearer my_access_token");
+                } else {
+                    // Every other calls are with my_refreshed_token
+                    assertThat(httpRequest
+                        .headers()
+                        .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)
+                        .orElse(null)).isEqualTo("Bearer my_refreshed_token");
+                }
+
+            });
+
+        // AccessToken only called 2 times on 3 attempts to send the messages
+        verify(oauth2AccessTokenHttpSender, times(2)).call();
+
+        // Check the messages have been sent once
+        messages.forEach(
+            message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+        // Httpclient is called once per message and once more after having refreshed the token
+        verify(mockedClient, times(messages.size() + 1)).send(any(HttpRequest.class), any(BodyHandler.class));
+    }
+
+    @Test
+    void throwsConnectExceptionForUnauthorizedToken() {
+
+        // first call to retrieve an access token
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+
+        // Mock response with 401 for all responses after the 1st one from super method
+        final HttpResponse<String> errorResponse = mock(HttpResponse.class);
+        when(errorResponse.statusCode()).thenReturn(401);
 
         assertThatExceptionOfType(ConnectException.class)
-                .isThrownBy(() -> httpSend.send("SOME_BODY"))
-                .withMessage("Sending failed and no retries remain, stopping");
+            .isThrownBy(() -> {
+                // Build the configuration
+                final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
+
+                // Mock the Client and Response
+                when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(errorResponse);
+
+                // Create a spy on the HttpSender implementation to capture methods parameters
+                final var httpSender =
+                    Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
+
+                // Trigger the client
+                final List<String> messages = List.of("some message 1", "some message 2");
+                messages.forEach(httpSender::send);
+
+            })
+            .withMessage("Sending failed and no retries remain, stopping");
+
+        // Only 2 calls were made with 1 retry
+        verify(oauth2AccessTokenHttpSender, times(2)).call();
     }
 
     @Test
-    void throwsConnectExceptionOnRefreshToken(@Mock final HttpResponse<String> response)
-            throws IOException, InterruptedException {
+    void throwsConnectExceptionForWrongAuthentication() throws IOException, InterruptedException {
 
-        final var httpSend =
-                new OAuth2HttpSender(
-                        new HttpSinkConfig(defaultConfig()),
-                        mockedHttpClient
-                );
-
-
-        when(mockedHttpClient.<String>send(any(HttpRequest.class), any()))
-                .thenAnswer(new Answer<HttpResponse<String>>() {
-
-                    final Map<String, String> accessTokenJson = Map.of(
-                            "access_token", "bla-bla-bla-bla"
-                    );
-
-                    int accessTokenRequestCounter = 0;
-
-                    int messageRequestCounter = 0;
-
-                    @Override
-                    public HttpResponse<String> answer(final InvocationOnMock invocation) throws Throwable {
-                        final var request = invocation.<HttpRequest>getArgument(0);
-                        if (request.uri().equals(new URI("http://localhost:42/token"))) {
-                            if (accessTokenRequestCounter >= 1) {
-                                when(response.statusCode()).thenReturn(400);
-                                when(response.body()).thenReturn("NOK");
-                            } else {
-                                when(response.statusCode()).thenReturn(200);
-                                when(response.body())
-                                        .thenReturn(objectMapper.writeValueAsString(accessTokenJson));
-                            }
-                            accessTokenRequestCounter++;
-                        } else {
-                            if (messageRequestCounter == 1) {
-                                when(response.statusCode()).thenReturn(401);
-                                when(response.body()).thenReturn("NOK");
-                            } else {
-                                when(response.statusCode()).thenReturn(200);
-                                when(response.body()).thenReturn("OK");
-                            }
-                            messageRequestCounter++;
-                        }
-                        return response;
-                    }
-                });
+        // Bad formed json
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn("not a json");
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
 
         assertThatExceptionOfType(ConnectException.class)
-                .isThrownBy(() -> {
-                    httpSend.send("SOME_BODY_1");
-                    httpSend.send("SOME_BODY_2");
-                })
-                .withMessage("Sending failed and no retries remain, stopping");
+            .isThrownBy(() -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), mockedClient,
+                oauth2AccessTokenHttpSender).send("a message"))
+            .withMessage("Couldn't get OAuth2 access token");
+
+        // Only 2 calls were made with 1 retry
+        verify(oauth2AccessTokenHttpSender, times(1)).call();
+        // Httpclient is never called to send the message
+        verify(mockedClient, never()).send(any(HttpRequest.class), any(BodyHandler.class));
     }
 
+    @Test
+    void throwsConnectExceptionForBadFormedAccessToken() throws IOException, InterruptedException {
+
+        // Unable to authenticate
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn(
+            "{\"bad_property\": \"my_access_token\",\"token_type\": \"Bearer\",\"expires_in\": 7199}");
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+
+        assertThatExceptionOfType(ConnectException.class)
+            .isThrownBy(() -> new OAuth2HttpSender(new HttpSinkConfig(defaultConfig()), mockedClient,
+                oauth2AccessTokenHttpSender).send("a message"))
+            .withMessage("Couldn't find access token property access_token in"
+                         + " response properties: [bad_property, token_type, expires_in]");
+
+        verify(oauth2AccessTokenHttpSender, times(1)).call();
+        // Httpclient is never called to send the message
+        verify(mockedClient, never()).send(any(HttpRequest.class), any(BodyHandler.class));
+    }
+
+    @Test
+    void throwsConnectExceptionForServerError() {
+        // first call to retrieve an access token
+        final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
+        when(mockedAccessTokenResponse.body()).thenReturn(ACCESS_TOKEN_RESPONSE);
+        when(oauth2AccessTokenHttpSender.call()).thenReturn(mockedAccessTokenResponse);
+
+        // Mock response with 500 for all responses after the 1st one from super method
+        final HttpResponse<String> errorResponse = mock(HttpResponse.class);
+        when(errorResponse.statusCode()).thenReturn(500);
+
+        assertThatExceptionOfType(ConnectException.class)
+            .isThrownBy(() -> {
+                // Build the configuration
+                final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
+
+                // Mock the Client and Response
+                when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(errorResponse);
+
+                // Create a spy on the HttpSender implementation to capture methods parameters
+                final var httpSender =
+                    Mockito.spy(new OAuth2HttpSender(config, mockedClient, oauth2AccessTokenHttpSender));
+
+                // Trigger the client
+                final List<String> messages = List.of("some message 1", "some message 2");
+                messages.forEach(httpSender::send);
+
+            })
+            .withMessage("Sending failed and no retries remain, stopping");
+    }
 
     private Map<String, String> defaultConfig() {
-        return Map.of(
-                "http.url", "http://localhost:42",
-                "http.authorization.type", "oauth2",
-                "oauth2.access.token.url", "http://localhost:42/token",
-                "oauth2.client.id", "some_client_id",
-                "oauth2.client.secret", "some_client_secret"
-        );
+        return Map.of("http.url", "http://localhost:42", "http.authorization.type", "oauth2", "oauth2.access.token.url",
+            "http://localhost:42/token", "oauth2.client.id", "some_client_id", "oauth2.client.secret",
+            "some_client_secret");
     }
 
 }
