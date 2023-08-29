@@ -28,7 +28,6 @@ import org.apache.kafka.connect.sink.SinkTask;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import io.aiven.kafka.connect.http.recordsender.RecordSender;
-import io.aiven.kafka.connect.http.sender.HttpSender;
 import io.aiven.kafka.connect.http.sender.HttpSenderFactory;
 
 import org.slf4j.Logger;
@@ -37,7 +36,6 @@ import org.slf4j.LoggerFactory;
 public final class HttpSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(HttpSinkTask.class);
 
-    private HttpSender httpSender;
     private RecordSender recordSender;
     private ErrantRecordReporter reporter;
 
@@ -46,23 +44,14 @@ public final class HttpSinkTask extends SinkTask {
 
     // required by Connect
     public HttpSinkTask() {
-        this(null);
-    }
-
-    protected HttpSinkTask(final HttpSender httpSender) {
-        this.httpSender = httpSender;
     }
 
     @Override
     public void start(final Map<String, String> props) {
         Objects.requireNonNull(props);
         final var config = new HttpSinkConfig(props);
-        if (this.httpSender == null) {
-            this.httpSender = HttpSenderFactory.createHttpSender(config);
-        }
-
-        recordSender = RecordSender.createRecordSender(httpSender, config);
-
+        final var httpSender = HttpSenderFactory.createHttpSender(config);
+        this.recordSender = RecordSender.createRecordSender(httpSender, config);
         this.useLegacySend = config.batchingEnabled();
 
         if (Objects.nonNull(config.kafkaRetryBackoffMs())) {
@@ -75,7 +64,7 @@ public final class HttpSinkTask extends SinkTask {
             }
 
             // may be null if DLQ not enabled
-            reporter = context.errantRecordReporter();
+            this.reporter = context.errantRecordReporter();
         } catch (NoClassDefFoundError | NoSuchMethodError e) {
             // Will occur in Connect runtimes earlier than 2.6
             log.warn("Apache Kafka versions prior to 2.6 do not support the errant record reporter.");
@@ -87,35 +76,53 @@ public final class HttpSinkTask extends SinkTask {
         log.debug("Received {} records", records.size());
 
         if (!records.isEmpty()) {
-            // use the legacy send if batch is enabled
-            if (this.useLegacySend) {
-                for (final SinkRecord record : records) {
-                    if (record.value() == null) {
-                        throw new DataException("Record value must not be null");
-                    }
-                }
-
-                recordSender.send(records);
+            // use the batch send if legacy send is enabled
+            if (!useLegacySend) {
+                sendEach(records);
             } else {
-                // send records to the sender one at a time
-                for (final SinkRecord record : records) {
-                    if (record.value() == null) {
-                        throw new DataException("Record value must not be null");
-                    }
+                sendBatch(records);
+            }
+        }
+    }
 
-                    try {
-                        recordSender.send(record);
-                    } catch (final ConnectException e) {
-                        if (reporter != null) {
-                            reporter.report(record, e);
-                        } else {
-                            // otherwise, re-throw the exception
-                            throw new ConnectException(e.getMessage());
-                        }
-                    }
+    /**
+     * Send a request per record
+     * @param records to send a request per record
+     */
+    private void sendEach(final Collection<SinkRecord> records) {
+        // send records to the sender one at a time
+        for (final var record : records) {
+            if (record.value() == null) {
+                // TODO: consider optionally process them, e.g. use another verb or ignore
+                throw new DataException("Record value must not be null");
+            }
+
+            try {
+                recordSender.send(record);
+            } catch (final ConnectException e) {
+                if (reporter != null) {
+                    reporter.report(record, e);
+                } else {
+                    // otherwise, re-throw the exception
+                    throw new ConnectException(e.getMessage());
                 }
             }
         }
+    }
+
+    /**
+     * Send a single request with all records included
+     * @param records to send
+     */
+    private void sendBatch(final Collection<SinkRecord> records) {
+        for (final var record : records) {
+            if (record.value() == null) {
+                // TODO: consider optionally process them, e.g. use another verb or ignore
+                throw new DataException("Record value must not be null");
+            }
+        }
+
+        recordSender.send(records);
     }
 
     @Override

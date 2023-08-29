@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import org.gradle.util.DistributionLocator
-import org.gradle.util.GradleVersion
-
 plugins {
     // https://docs.gradle.org/current/userguide/java_library_plugin.html
     id 'java-library'
@@ -34,10 +31,10 @@ plugins {
     id "nebula.lint" version "18.1.0"
 
     // https://plugins.gradle.org/plugin/com.github.spotbugs
-    id "com.github.spotbugs" version "5.0.14"
+    id "com.github.spotbugs" version "5.1.0"
 
     // https://plugins.gradle.org/plugin/com.diffplug.gradle.spotless
-    id "com.diffplug.spotless" version "6.19.0"
+    id "com.diffplug.spotless" version "6.20.0"
 }
 
 repositories {
@@ -53,12 +50,8 @@ targetCompatibility = JavaVersion.VERSION_11
 wrapper {
     distributionType = 'ALL'
     doLast {
-        final DistributionLocator locator = new DistributionLocator()
-        final GradleVersion version = GradleVersion.version(wrapper.gradleVersion)
-        final URI distributionUri = locator.getDistributionFor(version, wrapper.distributionType.name().toLowerCase(Locale.ENGLISH))
-        final URI sha256Uri = new URI(distributionUri.toString() + ".sha256")
-        final String sha256Sum = new String(sha256Uri.toURL().bytes)
-        wrapper.getPropertiesFile() << "distributionSha256Sum=${sha256Sum}\n"
+        def sha256Sum = new String(new URL("${distributionUrl}.sha256").bytes)
+        propertiesFile << "distributionSha256Sum=${sha256Sum}\n"
         println "Added checksum to wrapper properties"
     }
 }
@@ -71,9 +64,9 @@ ext {
                                        // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
     hamcrestVersion = "2.2"
     jacksonVersion = "2.15.2" // This Jackson is used in the tests.
-    jupiterVersion = "5.9.3"
+    jupiterVersion = "5.10.0"
     kafkaVersion = '2.6.3'
-    jettyVersion = "9.4.39.v20210325"
+    jettyVersion = "9.4.51.v20230217"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
     log4jVersion = "2.20.0"
@@ -106,8 +99,8 @@ sourceSets {
 
 idea {
     module {
-        testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
-        testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
+        testSources.from(sourceSets.integrationTest.java.srcDirs)
+        testSources.from(sourceSets.integrationTest.resources.srcDirs)
     }
 }
 
@@ -165,7 +158,7 @@ dependencies {
 }
 
 checkstyle {
-    toolVersion '8.25'
+    toolVersion '10.12.0'
 }
 
 compileJava {
@@ -179,13 +172,22 @@ compileJava {
     }
 }
 
-task integrationTest(type: Test) {
+test {
+    useJUnitPlatform {
+        includeEngines 'junit-jupiter'
+    }
+}
+
+tasks.register('integrationTest', Test) {
     description = 'Runs the integration tests.'
     group = 'verification'
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
 
-    dependsOn test, distTar
+    // defines testing order
+    shouldRunAfter test
+    // requires archive for connect runner
+    dependsOn distTar
 
     useJUnitPlatform()
 
@@ -196,10 +198,9 @@ task integrationTest(type: Test) {
     systemProperty("integration-test.distribution.file.path", distTar.archiveFile.get().asFile.path)
 }
 
-test {
-    useJUnitPlatform {
-        includeEngines 'junit-jupiter'
-    }
+tasks.javadoc {
+    // disable missing javadoc lint and show only warning and error messages
+    options.addStringOption('Xdoclint:all,-missing', '-quiet')
 }
 
 processResources {
@@ -216,7 +217,7 @@ jar {
     }
 }
 
-task connectorConfigDoc {
+tasks.register('connectorConfigDoc') {
     description = "Generates the connector's configuration documentation."
     group = "documentation"
     dependsOn "classes"
@@ -248,7 +249,7 @@ spotless {
 }
 
 spotbugs {
-    toolVersion = "4.4.2"
+    toolVersion = "4.7.3"
     excludeFilter = file("${project.rootDir}/config/spotbugs-exclude.xml")
 }
 spotbugsMain {
