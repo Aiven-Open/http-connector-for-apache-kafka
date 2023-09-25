@@ -58,6 +58,7 @@ public class HttpSinkConfig extends AbstractConfig {
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
     private static final String OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG = "oauth2.response.token.property";
+
     private static final String BATCHING_GROUP = "Batching";
     private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
     private static final String BATCH_MAX_SIZE_CONFIG = "batch.max.size";
@@ -567,7 +568,7 @@ public class HttpSinkConfig extends AbstractConfig {
                             + " = " + authorizationType);
                 }
                 break;
-            case OAUTH2: handleMissingConfigurationForOAuth2();
+            case OAUTH2: validateOAuth2Configuration();
                 break;
             case NONE:
                 if (headerAuthorization() != null && !headerAuthorization().isBlank()) {
@@ -590,7 +591,7 @@ public class HttpSinkConfig extends AbstractConfig {
 
     }
 
-    private void handleMissingConfigurationForOAuth2() {
+    private void validateOAuth2Configuration() {
         Stream.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_GRANT_TYPE_PROP_CONFIG, OAUTH2_GRANT_TYPE_CONFIG,
                   OAUTH2_CLIENT_ID_PROP_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_PROP_CONFIG)
               .filter(configKey -> getString(configKey) == null || getString(configKey).isBlank())

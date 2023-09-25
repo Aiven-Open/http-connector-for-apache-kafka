@@ -64,32 +64,57 @@ class OAuth2AccessTokenRequestFormTest {
     }
 
     @Test
-    void toBodyStringShouldThrowAnErrorWithoutClientIdProperty() {
+    void buildShouldThrowAnErrorWithoutClientIdProperty() {
         assertThatExceptionOfType(NullPointerException.class)
             .isThrownBy(() -> OAuth2AccessTokenRequestForm
                 .newBuilder()
                 .withGrantTypeProperty("grant_type")
                 .withGrantType("client_credentials")
-                .withClientId("id")
-                .withClientSecret("password")
-                .build()
-                .toBodyString())
+                .withClientSecretProperty("client_secret")
+                .build())
             .withMessage("The client id property is required");
     }
 
     @Test
-    void toBodyStringShouldThrowAnErrorWithoutClientSecretProperty() {
+    void buildShouldThrowAnErrorWithoutClientSecretProperty() {
         assertThatExceptionOfType(NullPointerException.class)
             .isThrownBy(() -> OAuth2AccessTokenRequestForm
                 .newBuilder()
                 .withGrantTypeProperty("grant_type")
                 .withGrantType("client_credentials")
                 .withClientIdProperty("client_id")
-                .withClientId("id")
+                .build())
+            .withMessage("The client secret property is required");
+    }
+
+    @Test
+    void toBodyStringShouldThrowAnErrorWithoutClientIdValue() {
+        assertThatExceptionOfType(NullPointerException.class)
+            .isThrownBy(() -> OAuth2AccessTokenRequestForm
+                .newBuilder()
+                .withGrantTypeProperty("grant_type")
+                .withGrantType("client_credentials")
+                .withClientIdProperty("client_id")
+                .withClientSecretProperty("client_secret")
                 .withClientSecret("password")
                 .build()
                 .toBodyString())
-            .withMessage("The client secret property is required");
+            .withMessage("The client id is required");
+    }
+
+    @Test
+    void toBodyStringShouldThrowAnErrorWithoutClientSecretValue() {
+        assertThatExceptionOfType(NullPointerException.class)
+            .isThrownBy(() -> OAuth2AccessTokenRequestForm
+                .newBuilder()
+                .withGrantTypeProperty("grant_type")
+                .withGrantType("client_credentials")
+                .withClientIdProperty("client_id")
+                .withClientSecretProperty("client_secret")
+                .withClientId("client")
+                .build()
+                .toBodyString())
+            .withMessage("The client secret is required");
     }
 
     @Test

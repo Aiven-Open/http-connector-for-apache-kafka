@@ -59,8 +59,6 @@ public class OAuth2AccessTokenRequestForm {
             stringJoiner.add(encodeNameAndValue(SCOPE, scope));
         }
         if (clientId != null && clientSecret != null) {
-            Objects.requireNonNull(clientIdProperty, "The client id property is required");
-            Objects.requireNonNull(clientSecretProperty, "The client secret property is required");
             stringJoiner
                 .add(encodeNameAndValue(clientIdProperty, clientId))
                 .add(encodeNameAndValue(clientSecretProperty, clientSecret));
@@ -133,6 +131,18 @@ public class OAuth2AccessTokenRequestForm {
         public OAuth2AccessTokenRequestForm build() {
             Objects.requireNonNull(grantTypeProperty, "The grant type property is required");
             Objects.requireNonNull(grantType, "The grant type is required");
+
+            // Both of the credential properties need to be set
+            if (clientIdProperty != null || clientSecretProperty != null) {
+                Objects.requireNonNull(clientIdProperty, "The client id property is required");
+                Objects.requireNonNull(clientSecretProperty, "The client secret property is required");
+            }
+            // Both of the credential values need to be set
+            if (clientId != null || clientSecret != null) {
+                Objects.requireNonNull(clientId, "The client id is required");
+                Objects.requireNonNull(clientSecret, "The client secret is required");
+            }
+
             return new OAuth2AccessTokenRequestForm(
                 grantTypeProperty, grantType, scope, clientIdProperty, clientId, clientSecretProperty, clientSecret);
         }

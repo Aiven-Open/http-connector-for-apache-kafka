@@ -37,14 +37,14 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
     }
 
     HttpResponse<String> call() {
-        final OAuth2AccessTokenRequestForm.Builder bodyBuilder = OAuth2AccessTokenRequestForm
+        final OAuth2AccessTokenRequestForm.Builder formBuilder = OAuth2AccessTokenRequestForm
             .newBuilder()
             .withGrantTypeProperty(config.oauth2GrantTypeProperty())
             .withGrantType(config.oauth2GrantType())
             .withScope(config.oauth2ClientScope());
 
         if (config.oauth2AuthorizationMode() == OAuth2AuthorizationMode.URL) {
-            bodyBuilder
+            formBuilder
                 .withClientIdProperty(config.oauth2ClientIdProperty())
                 .withClientId(config.oauth2ClientId())
                 .withClientSecretProperty(config.oauth2ClientSecretProperty())
@@ -52,7 +52,7 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
                     .oauth2ClientSecret()
                     .value());
         }
-        return super.send(bodyBuilder
+        return super.send(formBuilder
             .build()
             .toBodyString());
     }
