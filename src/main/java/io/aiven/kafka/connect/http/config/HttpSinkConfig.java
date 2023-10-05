@@ -37,6 +37,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class HttpSinkConfig extends AbstractConfig {
     private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
+    private static final String HTTP_METHOD = "http.method";
 
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
@@ -314,6 +315,41 @@ public class HttpSinkConfig extends AbstractConfig {
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG)
         );
+
+        configDef.define(
+                HTTP_METHOD,
+                ConfigDef.Type.STRING,
+                "POST",
+                new ConfigDef.Validator() {
+                    @Override
+                    @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE") // Suppress the ConfigException with null value.
+                    public void ensureValid(final String name, final Object value) {
+                        if (value == null) {
+                            throw new ConfigException(HTTP_METHOD, value);
+                        }
+                        assert value instanceof String;
+                        final String valueStr = (String) value;
+                        if (!HttpMethodsType.NAMES.contains(valueStr)) {
+                            throw new ConfigException(
+                                    HTTP_METHOD, valueStr,
+                                    "supported values are: " + HttpMethodsType.NAMES);
+                        }
+                    }
+
+                    @Override
+                    public String toString() {
+                        return HttpMethodsType.NAMES.toString();
+                    }
+                },
+                ConfigDef.Importance.LOW,
+                "The HTTP Method to use when send the data.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.SHORT,
+                HTTP_METHOD,
+                FixedSetRecommender.ofSupportedValues(HttpMethodsType.NAMES)
+        );
+
     }
 
     private static void addBatchingConfigGroup(final ConfigDef configDef) {
@@ -546,6 +582,10 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final URI httpUri() {
         return toURI(HTTP_URL_CONFIG);
+    }
+
+    public final HttpMethodsType httpMethod() {
+        return HttpMethodsType.valueOf(getString(HTTP_METHOD));
     }
 
     public final Long kafkaRetryBackoffMs() {
