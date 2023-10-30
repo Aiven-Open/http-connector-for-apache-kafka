@@ -21,8 +21,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public enum HttpMethodsType
-{
+public enum HttpMethodsType {
     POST("POST"),
     PUT("PUT");
 
