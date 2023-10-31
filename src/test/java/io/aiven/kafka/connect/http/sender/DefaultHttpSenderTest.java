@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.Map;
 
 import io.aiven.kafka.connect.http.config.HttpMethodsType;
-
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
 import org.apache.kafka.connect.errors.ConnectException;
+
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
