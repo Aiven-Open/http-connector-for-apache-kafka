@@ -16,7 +16,6 @@
 
 package io.aiven.kafka.connect.http.sender;
 
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -24,14 +23,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Objects;
-import java.util.StringJoiner;
-
-import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
+import io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode;
+import io.aiven.kafka.connect.http.sender.request.OAuth2AccessTokenRequestForm;
 
 import static io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode.HEADER;
-import static io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode.URL;
 
 class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSender {
 
@@ -40,38 +37,24 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
     }
 
     HttpResponse<String> call() {
-        final var accessTokenRequestBodyBuilder = new StringJoiner("&");
-        accessTokenRequestBodyBuilder.add(encodeNameAndValue("grant_type", "client_credentials"));
-        if (config.oauth2ClientScope() != null) {
-            accessTokenRequestBodyBuilder.add(encodeNameAndValue("scope", config.oauth2ClientScope()));
+        final OAuth2AccessTokenRequestForm.Builder formBuilder = OAuth2AccessTokenRequestForm
+            .newBuilder()
+            .withGrantTypeProperty(config.oauth2GrantTypeProperty())
+            .withGrantType(config.oauth2GrantType())
+            .withScope(config.oauth2ClientScope());
+
+        if (config.oauth2AuthorizationMode() == OAuth2AuthorizationMode.URL) {
+            formBuilder
+                .withClientIdProperty(config.oauth2ClientIdProperty())
+                .withClientId(config.oauth2ClientId())
+                .withClientSecretProperty(config.oauth2ClientSecretProperty())
+                .withClientSecret(config
+                    .oauth2ClientSecret()
+                    .value());
         }
-        setClientIdAndSecret(accessTokenRequestBodyBuilder, config);
-        return super.send(accessTokenRequestBodyBuilder.toString());
-    }
-
-    private void setClientIdAndSecret(
-        final StringJoiner requestBodyBuilder, final HttpSinkConfig config
-    ) {
-        if (config.oauth2AuthorizationMode() == URL) {
-            addClientIdAndSecretInRequestBody(requestBodyBuilder, config);
-        } else if (config.oauth2AuthorizationMode() != HEADER) {
-            throw new ConnectException("Unknown OAuth2 authorization mode: " + config.oauth2AuthorizationMode());
-        }
-    }
-
-    private void addClientIdAndSecretInRequestBody(final StringJoiner requestBodyBuilder,
-        final HttpSinkConfig config) {
-        requestBodyBuilder
-            .add(encodeNameAndValue("client_id", config.oauth2ClientId()))
-            .add(encodeNameAndValue("client_secret", config.oauth2ClientSecret().value()));
-    }
-
-    private String encodeNameAndValue(final String name, final String value) {
-        return String.format("%s=%s", encode(name), encode(value));
-    }
-
-    private String encode(final String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+        return super.send(formBuilder
+            .build()
+            .toBodyString());
     }
 
     private static class AccessTokenHttpRequestBuilder implements HttpRequestBuilder {
@@ -104,6 +87,7 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
                 .encodeToString(clientAndSecretBytes);
             builder.header(HEADER_AUTHORIZATION, clientAndSecretAuthHeader);
         }
+
     }
 
 }

@@ -75,7 +75,7 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
 
         // Trigger the client
         final List<String> messages = List.of("grant_type=client_credentials");
-        messages.forEach(message -> httpSender.call());
+        httpSender.call();
 
         // Capture the RequestBuilder
         final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
@@ -128,7 +128,7 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
         // Trigger the client
         final List<String> messages =
             List.of("grant_type=client_credentials&client_id=some_client_id&client_secret=some_client_secret");
-        messages.forEach(httpSender::send);
+        httpSender.call();
 
         // Capture the RequestBuilder
         final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
@@ -136,6 +136,64 @@ public class OAuth2AccessTokenHttpSenderTest extends HttpSenderTestBase<OAuth2Ac
             any(HttpResponseHandler.class), anyInt());
 
         // Retrieve the builders and rebuild the HttpRequests to check the HttpRequest proper configuration
+        defaultHttpRequestBuilder
+            .getAllValues()
+            .stream()
+            .map(Builder::build)
+            .forEach(httpRequest -> {
+                // Generic Assertions
+                assertThat(httpRequest.uri()).isEqualTo(config.oauth2AccessTokenUri());
+                assertThat(httpRequest.timeout())
+                    .isPresent()
+                    .get(as(InstanceOfAssertFactories.DURATION))
+                    .hasSeconds(config.httpTimeout());
+                assertThat(httpRequest.method()).isEqualTo("POST");
+
+                assertThat(httpRequest
+                    .headers()
+                    .firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE)).hasValue("application/x-www-form-urlencoded");
+                assertThat(httpRequest
+                    .headers()
+                    .firstValue(HttpRequestBuilder.HEADER_AUTHORIZATION)).isEmpty();
+            });
+
+        // Check the messages have been sent once
+        messages.forEach(
+            message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+
+    }
+
+    @Test
+    void shouldBuildCustomisedAccessTokenRequest() throws Exception {
+        final Map<String, String> configBase = new HashMap<>(defaultConfig());
+        configBase.put("oauth2.client.authorization.mode", "url");
+        configBase.put("oauth2.request.grant.type.property", "type");
+        configBase.put("oauth2.grant.type", "api-key");
+        configBase.put("oauth2.request.client.id.property", "key");
+        configBase.put("oauth2.client.id", "some_client_id");
+        configBase.put("oauth2.request.client.secret.property", "secret");
+        configBase.put("oauth2.client.secret", "some_client_secret");
+        configBase.put("oauth2.client.scope", "scope1,scope2");
+
+        // Build the configuration
+        final HttpSinkConfig config = new HttpSinkConfig(configBase);
+
+        // Mock the Client and Response
+        when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
+
+        // Create a spy on the HttpSender implementation to capture methods parameters
+        final var httpSender = Mockito.spy(new OAuth2AccessTokenHttpSender(config, mockedClient));
+
+        // Trigger the client
+        final List<String> messages =
+            List.of("type=api-key&scope=scope1%2Cscope2&key=some_client_id&secret=some_client_secret");
+        httpSender.call();
+
+        // Capture the RequestBuilder
+        final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
+        verify(httpSender, atLeast(messages.size())).sendWithRetries(defaultHttpRequestBuilder.capture(),
+            any(HttpResponseHandler.class), anyInt());
+
         defaultHttpRequestBuilder
             .getAllValues()
             .stream()
