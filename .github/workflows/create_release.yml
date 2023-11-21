@@ -11,6 +11,8 @@ jobs:
   build:
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Setup Java SDK
         uses: actions/setup-java@v1.4.3
