@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.connect.http.config;
 
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,6 +40,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class HttpSinkConfig extends AbstractConfig {
     private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
+    private static final String HTTP_PROXY_HOST = "http.proxy.host";
+    private static final String HTTP_PROXY_PORT = "http.proxy.port";
 
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
@@ -104,6 +107,30 @@ public class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.LONG,
             HTTP_URL_CONFIG
+        );
+        configDef.define(
+            HTTP_PROXY_HOST,
+            Type.STRING,
+            null,
+            new NonBlankStringValidator(true),
+            ConfigDef.Importance.LOW,
+            "Proxy hostname",
+            CONNECTION_GROUP,
+            groupCounter++,
+            ConfigDef.Width.LONG,
+            HTTP_PROXY_HOST
+        );
+        configDef.define(
+            HTTP_PROXY_PORT,
+            Type.INT,
+            -1,
+            ConfigDef.Range.between(-1, 65535),
+            ConfigDef.Importance.LOW,
+            "Proxy port",
+            CONNECTION_GROUP,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            HTTP_PROXY_PORT
         );
 
         configDef.define(
@@ -589,6 +616,9 @@ public class HttpSinkConfig extends AbstractConfig {
             throw new ConfigException("Cannot use errors.tolerance when batching is enabled");
         }
 
+        if (hasProxy() && getInt(HTTP_PROXY_PORT) == -1 || !hasProxy() && getInt(HTTP_PROXY_PORT) > -1) {
+            throw new ConfigException("Proxy host and port must be defined together");
+        }
     }
 
     private void validateOAuth2Configuration() {
@@ -730,6 +760,14 @@ public class HttpSinkConfig extends AbstractConfig {
 
     public final String oauth2ResponseTokenProperty() {
         return getString(OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG);
+    }
+
+    public final boolean hasProxy() {
+        return getString(HTTP_PROXY_HOST) != null;
+    }
+
+    public final InetSocketAddress proxy() {
+        return new InetSocketAddress(getString(HTTP_PROXY_HOST), getInt(HTTP_PROXY_PORT));
     }
 
     public static void main(final String... args) {
