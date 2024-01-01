@@ -66,7 +66,7 @@ ext {
     jacksonVersion = "2.16.0" // This Jackson is used in the tests.
     jupiterVersion = "5.10.1"
     kafkaVersion = '2.6.3'
-    jettyVersion = "9.4.51.v20230217"
+    jettyVersion = "12.0.5"
     junit4Version = "4.13.2"
     jsr305Version = "3.0.2"
     log4jVersion = "2.20.0"
