@@ -63,7 +63,7 @@ ext {
     confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.0.2 to match Kafka 2.6.
                                        // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
     hamcrestVersion = "2.2"
-    jacksonVersion = "2.16.0" // This Jackson is used in the tests.
+    jacksonVersion = "2.16.1" // This Jackson is used in the tests.
     jupiterVersion = "5.10.1"
     kafkaVersion = '2.6.3'
     jettyVersion = "9.4.51.v20230217"
