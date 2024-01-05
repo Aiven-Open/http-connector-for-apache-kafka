@@ -76,7 +76,8 @@ final class HttpSinkConfigTest {
                 .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
                 .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty))
                 .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs))
-                .returns(false, from(HttpSinkConfig::hasProxy));
+                .returns(false, from(HttpSinkConfig::hasProxy))
+                .returns(false, from(HttpSinkConfig::sslTrustAllCertificates));
     }
 
     @Test
@@ -622,5 +623,17 @@ final class HttpSinkConfigTest {
         assertThatExceptionOfType(ConfigException.class)
             .isThrownBy(() -> new HttpSinkConfig(properties))
             .withMessage("Proxy host and port must be defined together");
+    }
+
+    @Test
+    void disableHostnameVerification() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "http.ssl.trust.all.certs", "true"
+        );
+
+        final var config = new HttpSinkConfig(properties);
+        assertThat(config.sslTrustAllCertificates()).isTrue();
     }
 }
