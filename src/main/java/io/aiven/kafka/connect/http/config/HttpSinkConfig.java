@@ -36,7 +36,7 @@ import org.apache.kafka.connect.errors.ConnectException;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-public class HttpSinkConfig extends AbstractConfig {
+public final class HttpSinkConfig extends AbstractConfig {
     private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
 
