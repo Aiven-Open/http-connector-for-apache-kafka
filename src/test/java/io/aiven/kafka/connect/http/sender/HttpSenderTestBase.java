@@ -31,7 +31,7 @@ import org.mockito.Mockito;
 
 import static org.mockito.ArgumentMatchers.anyString;
 
-abstract class HttpSenderTestBase<T extends AbstractHttpSender> {
+abstract class HttpSenderTestBase {
 
     @Mock
     protected HttpClient mockedClient;
