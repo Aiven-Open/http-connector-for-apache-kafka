@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.connect.http.config;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -73,7 +74,8 @@ final class HttpSinkConfigTest {
                 .returns(null, from(HttpSinkConfig::oauth2ClientScope))
                 .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
                 .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty))
-                .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs));
+                .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs))
+                .returns(false, from(HttpSinkConfig::hasProxy));
     }
 
     @Test
@@ -577,5 +579,47 @@ final class HttpSinkConfigTest {
 
         config = new HttpSinkConfig(properties);
         assertThat(config.batchingEnabled()).isTrue();
+    }
+
+    @Test
+    void correctProxy() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "http.proxy.host", "proxy",
+            "http.proxy.port", "80"
+        );
+
+        final var config = new HttpSinkConfig(properties);
+        assertThat(config.hasProxy()).isTrue();
+        assertThat(config.proxy())
+            .returns("proxy", InetSocketAddress::getHostName)
+            .returns(80, InetSocketAddress::getPort);
+    }
+
+    @Test
+    void missingProxyHost() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "http.proxy.port", "80"
+        );
+
+        assertThatExceptionOfType(ConfigException.class)
+            .isThrownBy(() -> new HttpSinkConfig(properties))
+            .withMessage("Proxy host and port must be defined together");
+    }
+
+    @Test
+    void missingProxyPort() {
+        final Map<String, String> properties = Map.of(
+            "http.url", "http://localhost:8090",
+            "http.authorization.type", "none",
+            "http.proxy.host", "proxy"
+        );
+
+        assertThatExceptionOfType(ConfigException.class)
+            .isThrownBy(() -> new HttpSinkConfig(properties))
+            .withMessage("Proxy host and port must be defined together");
     }
 }

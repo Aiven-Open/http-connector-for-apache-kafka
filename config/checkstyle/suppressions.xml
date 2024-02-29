@@ -23,5 +23,6 @@
   <suppress checks="ClassDataAbstractionCoupling" files="(IntegrationTest|ConnectRunner).java" />
   <suppress checks="MethodLength" files="(HttpSinkConfig).java" />
   <suppress checks="CyclomaticComplexity" files="(HttpSinkConfig).java" />
+  <suppress checks="JavaNCSS" files="HttpSinkConfig.java" />
 
 </suppressions>

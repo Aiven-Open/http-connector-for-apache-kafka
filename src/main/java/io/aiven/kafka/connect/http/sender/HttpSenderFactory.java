@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.connect.http.sender;
 
+import java.net.ProxySelector;
 import java.net.http.HttpClient;
 
 import org.apache.kafka.connect.errors.ConnectException;
@@ -25,15 +26,20 @@ import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 public final class HttpSenderFactory {
 
     public static HttpSender createHttpSender(final HttpSinkConfig config) {
+        final var clientBuilder = HttpClient.newBuilder();
+        if (config.hasProxy()) {
+            clientBuilder.proxy(ProxySelector.of(config.proxy()));
+        }
+        final var client = clientBuilder.build();
         switch (config.authorizationType()) {
             case NONE:
-                return new DefaultHttpSender(config, HttpClient.newHttpClient());
+                return new DefaultHttpSender(config, client);
             case STATIC:
-                return new StaticAuthHttpSender(config, HttpClient.newHttpClient());
+                return new StaticAuthHttpSender(config, client);
             case OAUTH2:
                 final OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender =
-                    new OAuth2AccessTokenHttpSender(config, HttpClient.newHttpClient());
-                return new OAuth2HttpSender(config, HttpClient.newHttpClient(), oauth2AccessTokenHttpSender);
+                    new OAuth2AccessTokenHttpSender(config, client);
+                return new OAuth2HttpSender(config, client, oauth2AccessTokenHttpSender);
             default:
                 throw new ConnectException("Can't create HTTP sender for auth type: " + config.authorizationType());
         }
