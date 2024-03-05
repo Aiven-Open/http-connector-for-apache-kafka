@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -290,7 +291,7 @@ final class HttpSinkConfigTest {
 
         assertThat(HttpSinkConfig.configDef().validate(properties))
                 .filteredOn(x -> x.name().equals("http.authorization.type"))
-                .first().extracting(ConfigValue::recommendedValues).asList()
+                .first().extracting(ConfigValue::recommendedValues).asInstanceOf(InstanceOfAssertFactories.LIST)
                 .containsExactlyElementsOf(AuthorizationType.NAMES);
     }
 
