@@ -42,6 +42,7 @@ public final class HttpSinkConfig extends AbstractConfig {
     private static final String HTTP_URL_CONFIG = "http.url";
     private static final String HTTP_PROXY_HOST = "http.proxy.host";
     private static final String HTTP_PROXY_PORT = "http.proxy.port";
+    private static final String HTTP_SSL_TRUST_ALL_CERTIFICATES = "http.ssl.trust.all.certs";
 
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
@@ -131,6 +132,17 @@ public final class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.SHORT,
             HTTP_PROXY_PORT
+        );
+        configDef.define(
+            HTTP_SSL_TRUST_ALL_CERTIFICATES,
+            Type.BOOLEAN,
+            false,
+            ConfigDef.Importance.LOW,
+            "Disable hostname verification. Not recommended for production environments.",
+            CONNECTION_GROUP,
+            groupCounter++,
+            ConfigDef.Width.SHORT,
+            HTTP_SSL_TRUST_ALL_CERTIFICATES
         );
 
         configDef.define(
@@ -768,6 +780,10 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     public final InetSocketAddress proxy() {
         return new InetSocketAddress(getString(HTTP_PROXY_HOST), getInt(HTTP_PROXY_PORT));
+    }
+
+    public final boolean sslTrustAllCertificates() {
+        return getBoolean(HTTP_SSL_TRUST_ALL_CERTIFICATES);
     }
 
     public static void main(final String... args) {
