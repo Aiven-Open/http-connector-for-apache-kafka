@@ -63,6 +63,7 @@ abstract class AbstractHttpSender {
             final Builder requestBuilderWithPayload, final HttpResponseHandler httpResponseHandler,
             final int retries
     ) {
+        config.metrics().resetRetryCount();
         int remainingRetries = retries;
         while (remainingRetries >= 0) {
             try {
@@ -72,11 +73,13 @@ abstract class AbstractHttpSender {
                     log.debug("Server replied with status code {} and body {}", response.statusCode(), response.body());
                     // Handle the response
                     httpResponseHandler.onResponse(response, remainingRetries);
+                    config.metrics().resetRetryCount();
                     return response;
                 } catch (final IOException e) {
                     log.info("Sending failed, will retry in {} ms ({} retries remain)", config.retryBackoffMs(),
                             remainingRetries, e);
                     remainingRetries -= 1;
+                    config.metrics().incrementRetryCount();
                     TimeUnit.MILLISECONDS.sleep(config.retryBackoffMs());
                 }
             } catch (final InterruptedException e) {
