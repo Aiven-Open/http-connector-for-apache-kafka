@@ -33,7 +33,7 @@ plugins {
     idea
 
     // https://plugins.gradle.org/plugin/com.github.spotbugs
-    id("com.github.spotbugs") version "6.0.7"
+    id("com.github.spotbugs") version "6.0.9"
 
     // https://plugins.gradle.org/plugin/com.diffplug.gradle.spotless
     id("com.diffplug.spotless") version "6.25.0"
