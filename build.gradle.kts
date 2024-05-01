@@ -64,7 +64,7 @@ val avroVersion = "1.9.2" // Version 1.9.2 brings Jackson 2.10.2 package for Avr
 val confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.0.2 to match Kafka 2.6.
 // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
 val hamcrestVersion = "2.2"
-val jacksonVersion = "2.16.1" // This Jackson is used in the tests.
+val jacksonVersion = "2.17.0" // This Jackson is used in the tests.
 val jupiterVersion = "5.10.2"
 val kafkaVersion = "2.6.3"
 val jettyVersion = "9.4.51.v20230217"
