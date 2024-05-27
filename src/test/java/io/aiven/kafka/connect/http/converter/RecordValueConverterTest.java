@@ -17,6 +17,7 @@
 package io.aiven.kafka.connect.http.converter;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
@@ -72,6 +73,21 @@ class RecordValueConverterTest {
         final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA);
 
         final Map<String, String> value = new HashMap<>();
+        value.put("key", "value");
+
+        final var sinkRecord = new SinkRecord(
+                "some-topic", 0,
+                SchemaBuilder.string(),
+                "some-key", recordSchema, value, 1L);
+
+        assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("{\"key\":\"value\"}");
+    }
+
+    @Test
+    void convertLinkedHashMapRecord() {
+        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA);
+
+        final Map<String, String> value = new LinkedHashMap<>();
         value.put("key", "value");
 
         final var sinkRecord = new SinkRecord(
