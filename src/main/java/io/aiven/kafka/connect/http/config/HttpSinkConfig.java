@@ -35,6 +35,8 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.errors.ConnectException;
 
+import io.aiven.kafka.connect.http.metrics.HttpConnectorMetrics;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public final class HttpSinkConfig extends AbstractConfig {
@@ -84,6 +86,8 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     private static final String ERRORS_GROUP = "Errors Handling";
     private static final String ERRORS_TOLERANCE = "errors.tolerance";
+
+    private final HttpConnectorMetrics metrics = new HttpConnectorMetrics(this);
 
     public static ConfigDef configDef() {
         final ConfigDef configDef = new ConfigDef();
@@ -784,6 +788,10 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     public final boolean sslTrustAllCertificates() {
         return getBoolean(HTTP_SSL_TRUST_ALL_CERTIFICATES);
+    }
+
+    public HttpConnectorMetrics metrics() {
+        return metrics;
     }
 
     public static void main(final String... args) {
