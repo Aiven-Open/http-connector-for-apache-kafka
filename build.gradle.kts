@@ -77,7 +77,7 @@ val slf4japiVersion = "1.7.36"
 val spotbugsAnnotationsVersion = "4.8.6"
 val testcontainersVersion = "1.19.8"
 val assertjVersion = "3.25.3"
-val awaitilityVersion = "4.2.1"
+val awaitilityVersion = "4.2.2"
 
 distributions {
     named("main") {
