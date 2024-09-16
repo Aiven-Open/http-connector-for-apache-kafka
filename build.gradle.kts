@@ -75,7 +75,7 @@ val mockitoVersion = "5.12.0"
 val servletVersion = "4.0.1"
 val slf4japiVersion = "1.7.36"
 val spotbugsAnnotationsVersion = "4.8.6"
-val testcontainersVersion = "1.19.8"
+val testcontainersVersion = "1.20.1"
 val assertjVersion = "3.25.3"
 val awaitilityVersion = "4.2.2"
 
