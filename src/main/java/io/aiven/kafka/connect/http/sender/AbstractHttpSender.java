@@ -47,6 +47,26 @@ abstract class AbstractHttpSender {
         this.httpClient = Objects.requireNonNull(httpClient);
     }
 
+    public final HttpResponse<String> send(final String body, final String key) {
+        if (this.config.httpUri().toString().contains("{key}")) {
+            final var configOriginalMap = this.config.originalsStrings();
+            final String genericUrl = configOriginalMap.get("http.url");
+            final String newUrl = genericUrl.replace("{key}", key);
+            configOriginalMap.replace("http.url", newUrl);
+            log.debug("Key replaced in URL. New URL: {}", newUrl);
+
+            final var newConfig = new HttpSinkConfig(configOriginalMap);
+            log.debug("Sending request with body: {}", body);
+            
+            final var requestBuilder =
+                    httpRequestBuilder.build(newConfig).POST(HttpRequest.BodyPublishers.ofString(body));
+            return sendWithRetries(requestBuilder, HttpResponseHandler.ON_HTTP_ERROR_RESPONSE_HANDLER,
+                    config.maxRetries());
+        } else {
+            return send(body);
+        }
+    }
+
     public final HttpResponse<String> send(final String body) {
         final var requestBuilder =
                 httpRequestBuilder.build(config).POST(HttpRequest.BodyPublishers.ofString(body));
