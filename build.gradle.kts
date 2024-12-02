@@ -76,7 +76,7 @@ val servletVersion = "4.0.1"
 val slf4japiVersion = "1.7.36"
 val spotbugsAnnotationsVersion = "4.8.6"
 val testcontainersVersion = "1.20.4"
-val assertjVersion = "3.25.3"
+val assertjVersion = "3.26.3"
 val awaitilityVersion = "4.2.2"
 
 distributions {
