@@ -65,7 +65,7 @@ val confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.
 // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
 val hamcrestVersion = "2.2"
 val jacksonVersion = "2.17.2" // This Jackson is used in the tests.
-val jupiterVersion = "5.11.3"
+val jupiterVersion = "5.11.4"
 val kafkaVersion = "2.6.3"
 val jettyVersion = "9.4.51.v20230217"
 val junit4Version = "4.13.2"
