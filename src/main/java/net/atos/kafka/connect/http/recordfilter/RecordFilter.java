@@ -19,7 +19,7 @@ public abstract class RecordFilter {
 
     public abstract Collection<SinkRecord> filter(final Collection<SinkRecord> records);
 
-    public static RecordFilter createRecordSender(final HttpSinkConfig config,String filter) {
+    public static RecordFilter createRecordFilter(final HttpSinkConfig config, String filter) {
         return new EventCloudRecordFilter(config,filter);
     }
 
