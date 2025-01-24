@@ -16,7 +16,7 @@ class RecordValueFilterTest {
     final RecordValueConverter recordValueConverter = new RecordValueConverter();
 
     @Test
-    void testFilterRecord() {
+    void testFilterBasicRecord() {
         final var recordSchema = SchemaBuilder.struct()
                 .name("record")
                 .field("name", SchemaBuilder.string())
@@ -67,7 +67,7 @@ class RecordValueFilterTest {
     }
 
     @Test
-    void testWrongJsonRecord() {
+    void testFilterWrongJsonRecord() {
         final var recordSchema = SchemaBuilder.struct()
                 .name("record")
                 .field("name", SchemaBuilder.string())
@@ -91,7 +91,7 @@ class RecordValueFilterTest {
         assertThat(listRecords).hasSize(10);
     }
     @Test
-    void testStringRecord() {
+    void testFilterStringRecord() {
         final var recordSchema = SchemaBuilder.string();
 
         final var sinkRecord = new SinkRecord(
@@ -104,7 +104,7 @@ class RecordValueFilterTest {
         assertThat(listRecords).isEmpty();
     }
     @Test
-    void testNullRecord() {
+    void testFilterNullRecord() {
         final var recordSchema = SchemaBuilder.string();
 
         final var sinkRecord = new SinkRecord(
