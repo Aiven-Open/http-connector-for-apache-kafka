@@ -215,4 +215,14 @@ Errors Handling
   * Default: null
   * Importance: low
 
+Formatting
+^^^^^^^^^^^^^^^
+
+``avro.decimal.format``
+  Controls which format this converter will serialize decimals in. It can be either `BASE64` (default) or `NUMERIC`.
+
+  * Type: string
+  * Default: BASE64
+  * Valid Values: [BASE64, NUMERIC]
+  * Importance: low
 

@@ -28,10 +28,11 @@ public abstract class RecordSender {
 
     protected final HttpSender httpSender;
 
-    protected final RecordValueConverter recordValueConverter = new RecordValueConverter();
+    protected final RecordValueConverter recordValueConverter;
 
-    protected RecordSender(final HttpSender httpSender) {
+    protected RecordSender(final HttpSender httpSender, final RecordValueConverter recordValueConverter) {
         this.httpSender = httpSender;
+        this.recordValueConverter = recordValueConverter;
     }
 
     public abstract void send(final Collection<SinkRecord> records);
@@ -39,15 +40,17 @@ public abstract class RecordSender {
     public abstract void send(final SinkRecord record);
 
     public static RecordSender createRecordSender(final HttpSender httpSender, final HttpSinkConfig config) {
+        final RecordValueConverter recordValueConverter = RecordValueConverter.create(config);
         if (config.batchingEnabled()) {
             return new BatchRecordSender(
                     httpSender,
+                    recordValueConverter,
                     config.batchMaxSize(),
                     config.batchPrefix(),
                     config.batchSuffix(),
                     config.batchSeparator());
         } else {
-            return new SingleRecordSender(httpSender);
+            return new SingleRecordSender(httpSender, recordValueConverter);
         }
     }
 

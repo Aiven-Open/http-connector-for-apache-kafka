@@ -20,12 +20,13 @@ import java.util.Collection;
 
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import io.aiven.kafka.connect.http.converter.RecordValueConverter;
 import io.aiven.kafka.connect.http.sender.HttpSender;
 
 final class SingleRecordSender extends RecordSender {
 
-    protected SingleRecordSender(final HttpSender httpSender) {
-        super(httpSender);
+    protected SingleRecordSender(final HttpSender httpSender, final RecordValueConverter recordValueConverter) {
+        super(httpSender, recordValueConverter);
     }
 
     @Override

@@ -34,6 +34,7 @@ import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.json.DecimalFormat;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -80,6 +81,9 @@ public final class HttpSinkConfig extends AbstractConfig {
     private static final String TIMEOUT_GROUP = "Timeout";
     private static final String HTTP_TIMEOUT_CONFIG = "http.timeout";
 
+    private static final String FORMATING_GROUP = "Format";
+    private static final String AVRO_DECIMAL_FORMAT_CONFIG = "avro.decimal.format";
+
     public static final String NAME_CONFIG = "name";
 
     private static final String ERRORS_GROUP = "Errors Handling";
@@ -92,6 +96,7 @@ public final class HttpSinkConfig extends AbstractConfig {
         addRetriesConfigGroup(configDef);
         addTimeoutConfigGroup(configDef);
         addErrorsConfigGroup(configDef);
+        addFormatConfigGroup(configDef);
         return configDef;
     }
 
@@ -586,7 +591,23 @@ public final class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.SHORT,
             HTTP_TIMEOUT_CONFIG
+        );
+    }
 
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // Suppress groupCounter and groupCounter++
+    private static void addFormatConfigGroup(final ConfigDef configDef) {
+        int groupCounter = 0;
+        configDef.define(
+                AVRO_DECIMAL_FORMAT_CONFIG,
+                ConfigDef.Type.STRING,
+                "BASE64",
+                ConfigDef.Importance.LOW,
+                "Controls which format this converter will serialize "
+                        + "decimals in. and can be either BASE64 (default) or NUMERIC.",
+                FORMATING_GROUP,
+                groupCounter++,
+                ConfigDef.Width.MEDIUM,
+                AVRO_DECIMAL_FORMAT_CONFIG
         );
     }
 
@@ -780,6 +801,10 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     public final InetSocketAddress proxy() {
         return new InetSocketAddress(getString(HTTP_PROXY_HOST), getInt(HTTP_PROXY_PORT));
+    }
+
+    public DecimalFormat decimalFormat() {
+        return DecimalFormat.valueOf(getString(AVRO_DECIMAL_FORMAT_CONFIG));
     }
 
     public final boolean sslTrustAllCertificates() {

@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import io.aiven.kafka.connect.http.converter.RecordValueConverter;
 import io.aiven.kafka.connect.http.sender.HttpSender;
 
 final class BatchRecordSender extends RecordSender {
@@ -33,11 +34,12 @@ final class BatchRecordSender extends RecordSender {
     private final String batchSeparator;
 
     protected BatchRecordSender(final HttpSender httpSender,
+                                final RecordValueConverter recordValueConverter,
                                 final int batchMaxSize,
                                 final String batchPrefix,
                                 final String batchSuffix,
                                 final String batchSeparator) {
-        super(httpSender);
+        super(httpSender, recordValueConverter);
         this.batchMaxSize = batchMaxSize;
         this.batchPrefix = batchPrefix;
         this.batchSuffix = batchSuffix;

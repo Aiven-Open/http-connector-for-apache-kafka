@@ -19,16 +19,19 @@ package io.aiven.kafka.connect.http.converter;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.apache.kafka.connect.json.DecimalFormat;
 import org.apache.kafka.connect.json.JsonConverter;
+import org.apache.kafka.connect.json.JsonConverterConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 class JsonRecordValueConverter implements RecordValueConverter.Converter {
 
     private final JsonConverter jsonConverter;
 
-    public JsonRecordValueConverter() {
+    public JsonRecordValueConverter(final DecimalFormat decimalFormat) {
         this.jsonConverter = new JsonConverter();
-        jsonConverter.configure(Map.of("schemas.enable", false, "converter.type", "value"));
+        jsonConverter.configure(Map.of("schemas.enable", false, "converter.type", "value",
+                JsonConverterConfig.DECIMAL_FORMAT_CONFIG, decimalFormat.name()));
     }
 
     @Override

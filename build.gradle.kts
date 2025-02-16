@@ -125,11 +125,11 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("org.slf4j:slf4j-api:$slf4japiVersion")
 
-    testRuntimeOnly("org.apache.kafka:connect-json:$kafkaVersion")
     testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter:$jupiterVersion")
 
     testImplementation("org.apache.kafka:connect-api:$kafkaVersion")
+    testImplementation("org.apache.kafka:connect-json:$kafkaVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
     testImplementation("org.mockito:mockito-core:$mockitoVersion")

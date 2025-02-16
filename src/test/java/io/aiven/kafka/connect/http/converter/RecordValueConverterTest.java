@@ -28,16 +28,35 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.json.DecimalFormat;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import io.aiven.kafka.connect.http.config.HttpSinkConfig;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.when;
 
+
+@ExtendWith(MockitoExtension.class)
 class RecordValueConverterTest {
 
-    final RecordValueConverter recordValueConverter = new RecordValueConverter();
+    @Mock
+    private HttpSinkConfig httpSinkConfig;
+
+    private RecordValueConverter recordValueConverter;
+
+    @BeforeEach
+    void setup() {
+        when(httpSinkConfig.decimalFormat()).thenReturn(DecimalFormat.NUMERIC);
+        this.recordValueConverter = RecordValueConverter.create(httpSinkConfig);
+    }
 
     @Test
     void convertAvroRecord() {
