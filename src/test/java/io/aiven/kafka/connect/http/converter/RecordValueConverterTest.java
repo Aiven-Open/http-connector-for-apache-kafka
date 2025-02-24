@@ -291,7 +291,7 @@ class RecordValueConverterTest {
                 recordSchema, value, 1L);
 
         assertThat(recordValueConverter.convert(sinkRecord))
-                .isEqualTo("{\"name\":null,\"value\":null}"); // Expected empty JSON object for null values
+                .isEqualTo("{\"name\":null,\"value\":null}");
     }
 
     private static SinkRecord createSinkRecord(SchemaBuilder schema, Struct value) {
