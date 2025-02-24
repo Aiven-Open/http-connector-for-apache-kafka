@@ -164,7 +164,7 @@ class RecordValueConverterTest {
             "BASE64  , 99.99  , \"Jw8=\""
     })
     void convertAvroRecordWithDecimals(
-            DecimalFormat format, String decimalValue, String finalSnippet) {
+            DecimalFormat format, String decimalValue, String expectedValue) {
         when(httpSinkConfig.decimalFormat()).thenReturn(format);
         recordValueConverter = RecordValueConverter.create(httpSinkConfig);
 
@@ -174,7 +174,7 @@ class RecordValueConverterTest {
 
         final var sinkRecord = createSinkRecord(schema, value);
 
-        final var expectedJson = "{\"value\":" + finalSnippet + "}";
+        final var expectedJson = "{\"value\":" + expectedValue + "}";
         assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo(expectedJson);
     }
 
