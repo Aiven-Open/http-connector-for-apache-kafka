@@ -164,7 +164,7 @@ class RecordValueConverterTest {
             "BASE64  , 99.99  , \"Jw8=\""
     })
     void convertAvroRecordWithDecimals(
-            DecimalFormat format, String decimalValue, String expectedValue) {
+            final DecimalFormat format, final String decimalValue, final String expectedValue) {
         when(httpSinkConfig.decimalFormat()).thenReturn(format);
         recordValueConverter = RecordValueConverter.create(httpSinkConfig);
 
@@ -207,7 +207,8 @@ class RecordValueConverterTest {
 
         final var sinkRecord = createSinkRecord(schema, value);
 
-        final var expectedJson = String.format("{\"value\":%s,\"child\":{\"nestedValue\":%s}}", expectedParentValue, expectedChildValue);
+        final var expectedJson = String.format("{\"value\":%s,\"child\":{\"nestedValue\":%s}}",
+                expectedParentValue, expectedChildValue);
         assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo(expectedJson);
     }
 
@@ -216,8 +217,7 @@ class RecordValueConverterTest {
             "NUMERIC | 2 | 12.34 | 45.67 | [12.34,45.67]",
             "BASE64  | 2 | 12.34 | 45.67 | [\"BNI=\",\"Edc=\"]",
             "NUMERIC | 2 | 99.99 | 0.01  | [99.99,0.01]",
-            "BASE64  | 2 | 99.99 | 0.01  | [\"Jw8=\",\"AQ==\"]"
-    }, delimiterString = "|")
+            "BASE64  | 2 | 99.99 | 0.01  | [\"Jw8=\",\"AQ==\"]"}, delimiterString = "|")
     void convertAvroRecordWithDecimalArray(
             final DecimalFormat format,
             final int scale,
@@ -228,8 +228,10 @@ class RecordValueConverterTest {
         recordValueConverter = RecordValueConverter.create(httpSinkConfig);
 
         final var decimalSchema = Decimal.builder(scale).build();
-        final var schema = SchemaBuilder.struct().field("values", SchemaBuilder.array(decimalSchema));
-        final var value = new Struct(schema).put("values", List.of(new BigDecimal(val1), new BigDecimal(val2)));
+        final var schema = SchemaBuilder.struct().field("values",
+                SchemaBuilder.array(decimalSchema));
+        final var value = new Struct(schema).put("values",
+                List.of(new BigDecimal(val1), new BigDecimal(val2)));
 
         final var sinkRecord = createSinkRecord(schema, value);
 
@@ -271,7 +273,7 @@ class RecordValueConverterTest {
 
     @ParameterizedTest
     @EnumSource(DecimalFormat.class)
-    void convertAvroRecordWithNullValues(DecimalFormat format) {
+    void convertAvroRecordWithNullValues(final DecimalFormat format) {
         when(httpSinkConfig.decimalFormat()).thenReturn(format);
         this.recordValueConverter = RecordValueConverter.create(httpSinkConfig);
 
@@ -285,16 +287,13 @@ class RecordValueConverterTest {
         value.put("name", null);
         value.put("value", null);
 
-        final var sinkRecord = new SinkRecord(
-                "some-topic", 0,
-                Schema.STRING_SCHEMA, "some-key",
-                recordSchema, value, 1L);
+        final var sinkRecord = createSinkRecord(recordSchema, value);
 
         assertThat(recordValueConverter.convert(sinkRecord))
                 .isEqualTo("{\"name\":null,\"value\":null}");
     }
 
-    private static SinkRecord createSinkRecord(SchemaBuilder schema, Struct value) {
+    private static SinkRecord createSinkRecord(final SchemaBuilder schema, final Struct value) {
         return new SinkRecord("test-topic", 0, null, null, schema, value, 1L);
     }
 }
