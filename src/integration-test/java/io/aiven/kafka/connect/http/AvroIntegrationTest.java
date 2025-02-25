@@ -222,7 +222,7 @@ public class AvroIntegrationTest {
 
         // Configure connector decimal formatting
         final Map<String, String> config = basicConnectorConfig();
-        config.put("avro.decimal.format", decimalFormat);
+        config.put("decimal.format", decimalFormat);
 
         connectRunner.createConnector(config);
 

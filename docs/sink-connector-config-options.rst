@@ -218,7 +218,7 @@ Errors Handling
 Formatting
 ^^^^^^^^^^^^^^^
 
-``avro.decimal.format``
+``decimal.format``
   Controls which format this converter will serialize decimals in. It can be either `BASE64` (default) or `NUMERIC`.
 
   * Type: string

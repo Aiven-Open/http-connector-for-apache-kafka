@@ -82,7 +82,7 @@ public final class HttpSinkConfig extends AbstractConfig {
     private static final String HTTP_TIMEOUT_CONFIG = "http.timeout";
 
     private static final String FORMATING_GROUP = "Format";
-    private static final String AVRO_DECIMAL_FORMAT_CONFIG = "avro.decimal.format";
+    private static final String AVRO_DECIMAL_FORMAT_CONFIG = "decimal.format";
 
     public static final String NAME_CONFIG = "name";
 
