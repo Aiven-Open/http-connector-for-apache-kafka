@@ -25,18 +25,32 @@ import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.json.DecimalFormat;
 import org.apache.kafka.connect.sink.SinkRecord;
+
+import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
 public class RecordValueConverter {
     private static final ConcurrentHashMap<Class<?>, Converter> RUNTIME_CLASS_TO_CONVERTER_CACHE =
         new ConcurrentHashMap<>();
-    private final JsonRecordValueConverter jsonRecordValueConverter = new JsonRecordValueConverter();
 
-    private final Map<Class<?>, Converter> converters = Map.of(
-        String.class, record -> (String) record.value(),
-        Map.class, jsonRecordValueConverter,
-        Struct.class, jsonRecordValueConverter
-    );
+    private final Map<Class<?>, Converter> converters;
+
+    public static RecordValueConverter create(final HttpSinkConfig config) {
+        RUNTIME_CLASS_TO_CONVERTER_CACHE.clear(); // Avoid state being preserved on task restarts
+        final DecimalFormat decimalFormat = config.decimalFormat();
+        final JsonRecordValueConverter jsonRecordValueConverter = new JsonRecordValueConverter(decimalFormat);
+        final Map<Class<?>, RecordValueConverter.Converter> converters = Map.of(
+                String.class, record -> (String) record.value(),
+                Map.class, jsonRecordValueConverter,
+                Struct.class, jsonRecordValueConverter
+        );
+        return new RecordValueConverter(converters);
+    }
+
+    private RecordValueConverter(final Map<Class<?>, Converter> converters) {
+        this.converters = converters;
+    }
 
     interface Converter {
         String convert(final SinkRecord record);
@@ -109,5 +123,4 @@ public class RecordValueConverter {
                     recordClazz, implementedTypes));
         }
     }
-
 }

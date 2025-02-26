@@ -18,12 +18,15 @@ package io.aiven.kafka.connect.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -35,6 +38,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.connect.data.Decimal;
 
 import io.aiven.kafka.connect.http.mockserver.BodyRecorderHandler;
 import io.aiven.kafka.connect.http.mockserver.MockServer;
@@ -47,6 +51,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Container;
@@ -183,6 +189,58 @@ public class AvroIntegrationTest {
                 .until(() -> bodyRecorderHandler.recorderBodies().size() >= expectedBodies.size());
 
         assertThat(bodyRecorderHandler.recorderBodies()).containsExactlyElementsOf(expectedBodies);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "BASE64 , BZw=",  // Expected Base64-encoded representation of 14.36
+            "NUMERIC, 14.36"
+    })
+    void testDecimalFormat(final String decimalFormat, final String expectedValue) throws Exception {
+        final BodyRecorderHandler bodyRecorderHandler = new BodyRecorderHandler();
+        mockServer.addHandler(bodyRecorderHandler);
+        mockServer.start();
+
+        // Define Avro Schema with only one field: Decimal (Precision 10, Scale 2)
+        final var priceValue = new BigDecimal("14.36");
+        final var schema = new Schema.Parser()
+                .parse("{\"type\":\"record\",\"name\":\"record\","
+                        + "\"fields\":["
+                        + "{\"name\":\"price\",\"type\":{"
+                        + "\"type\":\"bytes\","
+                        + "\"logicalType\":\"decimal\","
+                        + "\"precision\":10,"
+                        + "\"scale\":2"
+                        + "}}]}");
+
+        final var valueRecord = new GenericData.Record(schema);
+
+        // Convert BigDecimal to Avro's expected bytes format
+        final var encodedPrice = Decimal.fromLogical(Decimal.schema(2), priceValue);
+        final var priceBuffer = ByteBuffer.wrap(encodedPrice);
+        valueRecord.put("price", priceBuffer);
+
+        // Configure connector decimal formatting
+        final Map<String, String> config = basicConnectorConfig();
+        config.put("decimal.format", decimalFormat);
+
+        connectRunner.createConnector(config);
+
+        // Send message asynchronously
+        sendMessageAsync(0, TEST_TOPIC, valueRecord);
+        producer.flush();
+
+        final List<String> actualReceivedValue = await("All expected requests received by HTTP server")
+                .atMost(Duration.ofSeconds(5000))
+                .pollInterval(Duration.ofMillis(100))
+                .until(() -> {
+                    final List<String> recordedBodies = bodyRecorderHandler.recorderBodies();
+                    return recordedBodies.isEmpty() ? null : recordedBodies;
+                }, Objects::nonNull);
+
+        assertThat(actualReceivedValue).hasSize(1)
+                .first()
+                .asString().contains(expectedValue);
     }
 
     private Map<String, String> basicConnectorConfig() {
