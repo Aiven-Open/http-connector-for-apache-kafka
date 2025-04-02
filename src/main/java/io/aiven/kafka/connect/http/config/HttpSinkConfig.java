@@ -58,6 +58,7 @@ public final class HttpSinkConfig extends AbstractConfig {
     private static final String OAUTH2_GRANT_TYPE_CONFIG = "oauth2.grant.type";
     private static final String OAUTH2_CLIENT_ID_PROP_CONFIG = "oauth2.request.client.id.property";
     private static final String OAUTH2_CLIENT_ID_CONFIG = "oauth2.client.id";
+    private static final String OAUTH2_BODY_PARAMS = "oauth2.body.params";
     private static final String OAUTH2_CLIENT_SECRET_PROP_CONFIG = "oauth2.request.client.secret.property";
     private static final String OAUTH2_CLIENT_SECRET_CONFIG = "oauth2.client.secret";
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
@@ -252,6 +253,23 @@ public final class HttpSinkConfig extends AbstractConfig {
                         OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_PROP_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG,
                         OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG)
+        );
+        configDef.define(
+                OAUTH2_BODY_PARAMS,
+                ConfigDef.Type.STRING,
+                null,
+                new ConfigDef.NonEmptyStringWithoutControlChars() {
+                    @Override
+                    public String toString() {
+                        return "OAuth2 additional params";
+                    }
+                },
+                ConfigDef.Importance.HIGH,
+                "Additional params to add to the body.",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_BODY_PARAMS
         );
         configDef.define(OAUTH2_GRANT_TYPE_PROP_CONFIG,
                 ConfigDef.Type.STRING,
@@ -765,6 +783,10 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     public final String oauth2GrantType() {
         return getString(OAUTH2_GRANT_TYPE_CONFIG);
+    }
+
+    public final String getOauth2BodyParams() {
+        return getString(OAUTH2_BODY_PARAMS);
     }
 
     public final String oauth2ClientIdProperty() {

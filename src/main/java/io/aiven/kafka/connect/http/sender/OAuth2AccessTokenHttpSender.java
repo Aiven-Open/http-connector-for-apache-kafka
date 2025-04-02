@@ -41,6 +41,7 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
             .newBuilder()
             .withGrantTypeProperty(config.oauth2GrantTypeProperty())
             .withGrantType(config.oauth2GrantType())
+            .withBodyParams(config.getOauth2BodyParams())
             .withScope(config.oauth2ClientScope());
 
         if (config.oauth2AuthorizationMode() == OAuth2AuthorizationMode.URL) {
