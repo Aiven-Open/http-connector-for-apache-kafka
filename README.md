@@ -10,7 +10,7 @@ We consider the connector **stable** despite the major version is currently 0.
 
 ## How it works
 
-The connector uses the POST HTTP method to deliver records.
+As default the connector uses the POST HTTP method to deliver records.
 
 The connector supports:
 - authorization (static, OAuth2);

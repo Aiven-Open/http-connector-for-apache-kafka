@@ -25,7 +25,7 @@ import io.aiven.kafka.connect.http.sender.DefaultHttpSender.DefaultHttpRequestBu
 class StaticAuthHttpSender extends AbstractHttpSender implements HttpSender {
 
     StaticAuthHttpSender(final HttpSinkConfig config, final HttpClient client) {
-        super(config, new StaticAuthHttpRequestBuilder(), client);
+        super(config, new StaticAuthHttpRequestBuilder(), client, null);
     }
 
     private static class StaticAuthHttpRequestBuilder extends DefaultHttpRequestBuilder {

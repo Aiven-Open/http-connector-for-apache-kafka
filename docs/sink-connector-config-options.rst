@@ -12,6 +12,14 @@ Connection
   * Valid Values: HTTP(S) URL
   * Importance: high
 
+``http.method``
+  The HTTP Method to use when send the data.
+
+  * Type: string
+  * Default: "POST"
+  * Valid Values: [POST, PUT]
+  * Importance: low
+
 ``http.authorization.type``
   The HTTP authorization type.
 

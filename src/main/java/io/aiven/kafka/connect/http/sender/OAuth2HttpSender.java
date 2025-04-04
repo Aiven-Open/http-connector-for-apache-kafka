@@ -23,6 +23,7 @@ import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.util.Map;
 
+import io.aiven.kafka.connect.http.config.HttpMethodsType;
 import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
@@ -41,7 +42,7 @@ class OAuth2HttpSender extends AbstractHttpSender implements HttpSender {
         final HttpClient httpClient,
         final OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender
     ) {
-        super(config, new OAuth2AuthHttpRequestBuilder(config, oauth2AccessTokenHttpSender), httpClient);
+        super(config, new OAuth2AuthHttpRequestBuilder(config, oauth2AccessTokenHttpSender), httpClient, null);
     }
 
     @Override
