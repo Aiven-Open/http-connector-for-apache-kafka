@@ -24,9 +24,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.kafka.connect.errors.ConnectException;
-
+import io.aiven.kafka.connect.http.config.HttpMethodsType;
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
+
+import org.apache.kafka.connect.errors.ConnectException;
 
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,7 @@ public class DefaultHttpSenderTest extends HttpSenderTestBase {
                     .isPresent()
                     .get(as(InstanceOfAssertFactories.DURATION))
                     .hasSeconds(config.httpTimeout());
-                assertThat(httpRequest.method()).isEqualTo("POST");
+                assertThat(httpRequest.method()).isEqualTo(HttpMethodsType.POST.name());
 
                 assertThat(httpRequest
                     .headers()
@@ -99,6 +100,54 @@ public class DefaultHttpSenderTest extends HttpSenderTestBase {
             message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message))));
 
     }
+
+    @Test
+    void shouldBuildDefaultHttpPutRequest() throws Exception {
+        final var configBase = new HashMap<>(defaultConfig());
+        configBase.put("http.method", "PUT");
+
+        // Build the configuration
+        final HttpSinkConfig config = new HttpSinkConfig(configBase);
+
+        // Mock the Http Client and Http Response
+        when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse);
+
+        // Create a spy on the HttpSender implementation to capture methods parameters
+        final var httpSender = Mockito.spy(new DefaultHttpSender(config, mockedClient));
+
+        // Trigger the client
+        final List<String> messages = List.of("some message");
+        messages.forEach(httpSender::send);
+
+        // Capture the RequestBuilder
+        final ArgumentCaptor<Builder> defaultHttpRequestBuilder = ArgumentCaptor.forClass(HttpRequest.Builder.class);
+        verify(httpSender, atLeast(messages.size())).sendWithRetries(defaultHttpRequestBuilder.capture(),
+                any(HttpResponseHandler.class), anyInt());
+
+        // Retrieve the builders and rebuild the HttpRequests to check the HttpRequest proper configuration
+        defaultHttpRequestBuilder
+                .getAllValues()
+                .stream()
+                .map(Builder::build)
+                .forEach(httpRequest -> {
+                    assertThat(httpRequest.uri()).isEqualTo(config.httpUri());
+                    assertThat(httpRequest.timeout())
+                            .isPresent()
+                            .get(as(InstanceOfAssertFactories.DURATION))
+                            .hasSeconds(config.httpTimeout());
+                    assertThat(httpRequest.method()).isEqualTo(HttpMethodsType.PUT.name());
+
+                    assertThat(httpRequest
+                            .headers()
+                            .firstValue(HttpRequestBuilder.HEADER_CONTENT_TYPE)).isEmpty();
+                });
+
+        // Check the messages have been sent once
+        messages.forEach(
+                message -> bodyPublishers.verify(() -> HttpRequest.BodyPublishers.ofString(eq(message)), times(1)));
+
+    }
+
 
     @Test
     void shouldBuildCustomHttpRequest() throws Exception {
