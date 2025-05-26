@@ -63,6 +63,7 @@ public final class HttpSinkConfig extends AbstractConfig {
     private static final String OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG = "oauth2.client.authorization.mode";
     private static final String OAUTH2_CLIENT_SCOPE_CONFIG = "oauth2.client.scope";
     private static final String OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG = "oauth2.response.token.property";
+    private static final String OAUTH2_TOKEN_RENEW_ON_STATUS_CODES_CONFIG ="oauth2.token.renew.on.status.codes";
 
     private static final String BATCHING_GROUP = "Batching";
     private static final String BATCHING_ENABLED_CONFIG = "batching.enabled";
@@ -423,6 +424,48 @@ public final class HttpSinkConfig extends AbstractConfig {
                 OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG,
                 List.of(OAUTH2_ACCESS_TOKEN_URL_CONFIG, OAUTH2_CLIENT_ID_CONFIG, OAUTH2_CLIENT_SECRET_CONFIG,
                         OAUTH2_CLIENT_AUTHORIZATION_MODE_CONFIG, OAUTH2_CLIENT_SCOPE_CONFIG)
+        );
+        configDef.define(
+                OAUTH2_TOKEN_RENEW_ON_STATUS_CODES_CONFIG,
+                ConfigDef.Type.LIST,
+                "401",
+                new ConfigDef.Validator() {
+
+                    @Override
+                    public void ensureValid(String name, Object value) {
+                        if (value == null) {
+                            throw new ConfigException(name, null, "can't be null");
+                        }
+                        if (!(value instanceof List)) {
+                            throw new ConfigException(name, value, "must be a list");
+                        }
+                        for (Object entry : (List) value) {
+                            if (!(entry instanceof String) || !isNumber((String) entry)) {
+                                throw new ConfigException(name, value, "must be a list of numbers");
+                            }
+                        }
+                    }
+
+                    private boolean isNumber(String value) {
+                        try {
+                            Integer.parseInt(value);
+                            return true;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    }
+
+                    @Override
+                    public String toString() {
+                        return "List of HTTP status codes";
+                    }
+                },
+                ConfigDef.Importance.LOW,
+                "Comma separated list of HTTP response status codes which should trigger an access token renewal",
+                CONNECTION_GROUP,
+                groupCounter++,
+                ConfigDef.Width.LONG,
+                OAUTH2_TOKEN_RENEW_ON_STATUS_CODES_CONFIG
         );
     }
 
@@ -793,6 +836,10 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     public final String oauth2ResponseTokenProperty() {
         return getString(OAUTH2_RESPONSE_TOKEN_PROPERTY_CONFIG);
+    }
+
+    public final List<Integer> oauth2RenewTokenOnStatusCodes() {
+        return getList(OAUTH2_TOKEN_RENEW_ON_STATUS_CODES_CONFIG).stream().map(Integer::valueOf).collect(Collectors.toList());
     }
 
     public final boolean hasProxy() {
