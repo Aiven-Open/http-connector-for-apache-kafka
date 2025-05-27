@@ -41,6 +41,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public final class HttpSinkConfig extends AbstractConfig {
     private static final String CONNECTION_GROUP = "Connection";
     private static final String HTTP_URL_CONFIG = "http.url";
+    private static final String RECORD_CONVERTER_TYPE = "record.converter.type";
     private static final String HTTP_PROXY_HOST = "http.proxy.host";
     private static final String HTTP_PROXY_PORT = "http.proxy.port";
     private static final String HTTP_SSL_TRUST_ALL_CERTIFICATES = "http.ssl.trust.all.certs";
@@ -113,6 +114,13 @@ public final class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.LONG,
             HTTP_URL_CONFIG
+        );
+        configDef.define(
+                RECORD_CONVERTER_TYPE,
+                ConfigDef.Type.STRING,
+                "default",
+                ConfigDef.Importance.MEDIUM,
+                "Choose Type of RecordConverter to use.(device, player, default)"
         );
         configDef.define(
             HTTP_PROXY_HOST,
@@ -809,6 +817,10 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     public final boolean sslTrustAllCertificates() {
         return getBoolean(HTTP_SSL_TRUST_ALL_CERTIFICATES);
+    }
+
+    public final String converterType() {
+      return getString(RECORD_CONVERTER_TYPE);
     }
 
     public static void main(final String... args) {

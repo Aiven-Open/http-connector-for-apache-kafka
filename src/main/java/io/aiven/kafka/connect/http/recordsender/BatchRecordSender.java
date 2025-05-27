@@ -16,18 +16,21 @@
 
 package io.aiven.kafka.connect.http.recordsender;
 
+import io.aiven.kafka.connect.http.converter.RecordValueConverter;
+import io.aiven.kafka.connect.http.sender.HttpSender;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.sink.SinkRecord;
-
-import io.aiven.kafka.connect.http.converter.RecordValueConverter;
-import io.aiven.kafka.connect.http.sender.HttpSender;
-
 final class BatchRecordSender extends RecordSender {
+    private static final Logger log = LoggerFactory.getLogger(BatchRecordSender.class);
+
     private final int batchMaxSize;
     private final String batchPrefix;
     private final String batchSuffix;
@@ -53,6 +56,7 @@ final class BatchRecordSender extends RecordSender {
             batch.add(record);
             if (batch.size() >= batchMaxSize) {
                 final String body = createRequestBody(batch);
+                log.debug("body:" + body);
                 batch.clear();
                 httpSender.send(body);
             }
@@ -60,6 +64,7 @@ final class BatchRecordSender extends RecordSender {
 
         if (!batch.isEmpty()) {
             final String body = createRequestBody(batch);
+            log.debug("body:" + body);
             httpSender.send(body);
         }
     }

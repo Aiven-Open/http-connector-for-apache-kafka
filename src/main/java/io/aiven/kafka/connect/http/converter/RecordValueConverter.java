@@ -39,12 +39,26 @@ public class RecordValueConverter {
     public static RecordValueConverter create(final HttpSinkConfig config) {
         RUNTIME_CLASS_TO_CONVERTER_CACHE.clear(); // Avoid state being preserved on task restarts
         final DecimalFormat decimalFormat = config.decimalFormat();
-        final JsonRecordValueConverter jsonRecordValueConverter = new JsonRecordValueConverter(decimalFormat);
-        final Map<Class<?>, RecordValueConverter.Converter> converters = Map.of(
+        final String converterType  =  config.converterType();
+        RecordValueConverter.Converter jsonRecordValueConverter = null;
+                switch (converterType) {
+                case "device":
+                        jsonRecordValueConverter = new PostBackConverter("/tmp", decimalFormat);
+                        break;
+                case "player":
+                        jsonRecordValueConverter = new PostBackConverter("/tmp", decimalFormat);
+                        break;
+               default :
+                        jsonRecordValueConverter = new JsonRecordValueConverter(decimalFormat);
+                        break;
+        }
+        final Map<Class<?>, RecordValueConverter.Converter> converters =
+                Map.of(
                 String.class, record -> (String) record.value(),
                 Map.class, jsonRecordValueConverter,
                 Struct.class, jsonRecordValueConverter
         );
+
         return new RecordValueConverter(converters);
     }
 
@@ -52,7 +66,7 @@ public class RecordValueConverter {
         this.converters = converters;
     }
 
-    interface Converter {
+    public interface Converter {
         String convert(final SinkRecord record);
     }
 

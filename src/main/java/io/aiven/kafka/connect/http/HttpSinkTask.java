@@ -80,7 +80,11 @@ public final class HttpSinkTask extends SinkTask {
             if (!useLegacySend) {
                 sendEach(records);
             } else {
+              try {
                 sendBatch(records);
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
             }
         }
     }
@@ -114,7 +118,7 @@ public final class HttpSinkTask extends SinkTask {
      * Send a single request with all records included
      * @param records to send
      */
-    private void sendBatch(final Collection<SinkRecord> records) {
+    private void sendBatch(final Collection<SinkRecord> records) throws Exception {
         for (final var record : records) {
             if (record.value() == null) {
                 // TODO: consider optionally process them, e.g. use another verb or ignore

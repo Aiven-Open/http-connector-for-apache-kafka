@@ -189,6 +189,11 @@ tasks.test {
     useJUnitPlatform {
         includeEngines("junit-jupiter")
     }
+
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+    }
 }
 
 tasks.processResources {

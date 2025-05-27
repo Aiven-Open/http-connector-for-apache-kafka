@@ -16,14 +16,16 @@
 
 package io.aiven.kafka.connect.http.recordsender;
 
-import java.util.Collection;
-
-import org.apache.kafka.connect.sink.SinkRecord;
-
 import io.aiven.kafka.connect.http.converter.RecordValueConverter;
 import io.aiven.kafka.connect.http.sender.HttpSender;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-final class SingleRecordSender extends RecordSender {
+import java.util.Collection;
+
+public final class SingleRecordSender extends RecordSender {
+    private static final Logger log = LoggerFactory.getLogger(SingleRecordSender.class);
 
     protected SingleRecordSender(final HttpSender httpSender, final RecordValueConverter recordValueConverter) {
         super(httpSender, recordValueConverter);
@@ -33,6 +35,7 @@ final class SingleRecordSender extends RecordSender {
     public void send(final Collection<SinkRecord> records) {
         for (final SinkRecord record : records) {
             final String body = recordValueConverter.convert(record);
+            log.debug("body:" + recordValueConverter.convert(record));
             httpSender.send(body);
         }
     }
@@ -40,6 +43,7 @@ final class SingleRecordSender extends RecordSender {
     @Override
     public void send(final SinkRecord record) {
         final String body = recordValueConverter.convert(record);
+        log.debug("body:" + recordValueConverter.convert(record));
         httpSender.send(body);
     }
 }

@@ -16,13 +16,12 @@
 
 package io.aiven.kafka.connect.http.recordsender;
 
-import java.util.Collection;
-
-import org.apache.kafka.connect.sink.SinkRecord;
-
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import io.aiven.kafka.connect.http.converter.RecordValueConverter;
 import io.aiven.kafka.connect.http.sender.HttpSender;
+import org.apache.kafka.connect.sink.SinkRecord;
+
+import java.util.Collection;
 
 public abstract class RecordSender {
 
@@ -35,14 +34,14 @@ public abstract class RecordSender {
         this.recordValueConverter = recordValueConverter;
     }
 
-    public abstract void send(final Collection<SinkRecord> records);
+    public abstract void send(final Collection<SinkRecord> records) throws Exception;
 
     public abstract void send(final SinkRecord record);
 
     public static RecordSender createRecordSender(final HttpSender httpSender, final HttpSinkConfig config) {
         final RecordValueConverter recordValueConverter = RecordValueConverter.create(config);
         if (config.batchingEnabled()) {
-            return new BatchRecordSender(
+            return new ProfileBatchSender(
                     httpSender,
                     recordValueConverter,
                     config.batchMaxSize(),

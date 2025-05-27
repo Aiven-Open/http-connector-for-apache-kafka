@@ -31,7 +31,8 @@ class JsonRecordValueConverter implements RecordValueConverter.Converter {
     public JsonRecordValueConverter(final DecimalFormat decimalFormat) {
         this.jsonConverter = new JsonConverter();
         jsonConverter.configure(Map.of("schemas.enable", false, "converter.type", "value",
-                JsonConverterConfig.DECIMAL_FORMAT_CONFIG, decimalFormat.name()));
+                JsonConverterConfig.DECIMAL_FORMAT_CONFIG, decimalFormat.name(),
+                "record.converter.type", "default"));
     }
 
     @Override

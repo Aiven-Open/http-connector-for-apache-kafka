@@ -32,6 +32,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.json.DecimalFormat;
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
@@ -60,7 +61,8 @@ class RecordValueConverterTest {
 
     @BeforeEach
     void setup() {
-        when(httpSinkConfig.decimalFormat()).thenReturn(DecimalFormat.NUMERIC);
+        when(httpSinkConfig.decimalFormat()).thenReturn(org.apache.kafka.connect.json.DecimalFormat.NUMERIC);
+        when(httpSinkConfig.converterType()).thenReturn("default");
         this.recordValueConverter = RecordValueConverter.create(httpSinkConfig);
     }
 
