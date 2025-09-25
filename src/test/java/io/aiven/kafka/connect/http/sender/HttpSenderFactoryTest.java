@@ -49,8 +49,8 @@ class HttpSenderFactoryTest {
         final var config = new HttpSinkConfig(Map.of(
             "http.url", "https://example.com",
             "http.authorization.type", "none",
-            "ssl.truststore.location", "truststore.jks",
-            "ssl.truststore.password", "password"
+            "http.ssl.truststore.location", "truststore.jks",
+            "http.ssl.truststore.password", "password"
         ));
 
         final var httpClient = HttpSenderFactory.buildHttpClient(config);

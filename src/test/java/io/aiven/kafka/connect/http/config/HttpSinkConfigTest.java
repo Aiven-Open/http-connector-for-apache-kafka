@@ -642,8 +642,8 @@ final class HttpSinkConfigTest {
         final Map<String, String> properties = Map.of(
             "http.url", "https://localhost:8090",
             "http.authorization.type", "none",
-            "ssl.truststore.location", "/path/to/truststore.jks",
-            "ssl.truststore.password", "password123"
+            "http.ssl.truststore.location", "/path/to/truststore.jks",
+            "http.ssl.truststore.password", "password123"
         );
 
         final var config = new HttpSinkConfig(properties);
@@ -656,7 +656,7 @@ final class HttpSinkConfigTest {
         final Map<String, String> properties = Map.of(
             "http.url", "https://localhost:8090",
             "http.authorization.type", "none",
-            "ssl.truststore.location", "/path/to/truststore.jks"
+            "http.ssl.truststore.location", "/path/to/truststore.jks"
         );
 
         final var config = new HttpSinkConfig(properties);

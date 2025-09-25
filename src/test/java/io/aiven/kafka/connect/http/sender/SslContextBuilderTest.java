@@ -61,7 +61,7 @@ class SslContextBuilderTest {
         final var config = new HttpSinkConfig(Map.of(
             "http.url", "https://example.com",
             "http.authorization.type", "none",
-            "ssl.truststore.location", "nonexistent.jks"
+            "http.ssl.truststore.location", "nonexistent.jks"
         ));
 
         assertThatThrownBy(() -> SslContextBuilder.createSslContext(config))
