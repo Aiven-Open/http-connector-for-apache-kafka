@@ -276,22 +276,16 @@
     <module name="BooleanExpressionComplexity" />
 
     <!-- See http://checkstyle.sourceforge.net/config_metrics.html#ClassFanOutComplexity -->
-    <module name="ClassFanOutComplexity">
-      <property name="max" value="30" />
-    </module>
+    <module name="ClassFanOutComplexity" />
 
     <!-- See http://checkstyle.sourceforge.net/config_metrics.html#CyclomaticComplexity -->
-    <module name="CyclomaticComplexity">
-      <property name="max" value="20" />
-    </module>
+    <module name="CyclomaticComplexity" />
 
     <!-- See http://checkstyle.sourceforge.net/config_metrics.html#JavaNCSS -->
     <module name="JavaNCSS" />
 
     <!-- See http://checkstyle.sourceforge.net/config_metrics.html#NPathComplexity -->
-    <module name="NPathComplexity">
-      <property name="max" value="3000" />
-    </module>
+    <module name="NPathComplexity" />
 
 
     <!-- See http://checkstyle.sourceforge.net/config_design.html#OneTopLevelClass -->

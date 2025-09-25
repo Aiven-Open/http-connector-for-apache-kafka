@@ -16,30 +16,10 @@
 
 package io.aiven.kafka.connect.http.sender;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedTrustManager;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.ProxySelector;
-import java.net.Socket;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 import org.apache.kafka.connect.errors.ConnectException;
 
@@ -63,141 +43,28 @@ public final class HttpSenderFactory {
         }
     }
 
-    private static final TrustManager DUMMY_TRUST_MANAGER = new X509ExtendedTrustManager() {
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final Socket socket)
-            throws CertificateException {
 
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final Socket socket)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return new java.security.cert.X509Certificate[0];
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final java.security.cert.X509Certificate[] chain, final String authType)
-            throws CertificateException {
-        }
-    };
 
     static HttpClient buildHttpClient(final HttpSinkConfig config) {
         final var clientBuilder = HttpClient.newBuilder();
-        if (config.hasProxy()) {
-            clientBuilder.proxy(ProxySelector.of(config.proxy()));
-        }
-        if (config.sslTrustAllCertificates() || config.sslTruststoreLocation() != null) {
-            try {
-                final SSLContext sslContext = SSLContext.getInstance("TLS");
-                if (config.sslTrustAllCertificates()) {
-                    sslContext.init(null, new TrustManager[] {DUMMY_TRUST_MANAGER}, new SecureRandom());
-                } else {
-                    final TrustManagerFactory tmf = loadTruststore(config);
-                    sslContext.init(null, tmf != null ? tmf.getTrustManagers() : null, new SecureRandom());
-                }
-                clientBuilder.sslContext(sslContext);
-            } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        configureProxy(config, clientBuilder);
+        configureSsl(config, clientBuilder);
         return clientBuilder.build();
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private static TrustManagerFactory loadTruststore(final HttpSinkConfig config) {
-        if (config.sslTruststoreLocation() == null) {
-            return null;
+    private static void configureProxy(final HttpSinkConfig config, final HttpClient.Builder clientBuilder) {
+        if (config.hasProxy()) {
+            clientBuilder.proxy(ProxySelector.of(config.proxy()));
         }
-        try {
-            final KeyStore trustStore = KeyStore.getInstance("JKS");
-            final String path = config.sslTruststoreLocation();
-            System.out.println("DEBUG: Looking for truststore at path: " + path);
-            System.out.println("DEBUG: Class classloader: " + HttpSenderFactory.class.getClassLoader());
-            System.out.println("DEBUG: Context classloader: " + Thread.currentThread().getContextClassLoader());
-            
-            InputStream is = null;
-            
-            // Try 1: Class-based resource loading
-            System.out.println("DEBUG: Trying class-based resource loading: " + path);
-            is = HttpSenderFactory.class.getResourceAsStream(path);
-            if (is != null) {
-                System.out.println("DEBUG: Found via class-based resource loading");
+    }
+
+    private static void configureSsl(final HttpSinkConfig config, final HttpClient.Builder clientBuilder) {
+        if (config.sslTrustAllCertificates() || config.sslTruststoreLocation() != null) {
+            try {
+                clientBuilder.sslContext(SslContextBuilder.createSslContext(config));
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                throw new RuntimeException(e);
             }
-            
-            // Try 2: Context classloader
-            if (is == null) {
-                System.out.println("DEBUG: Trying context classloader: " + path);
-                is = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream(path.startsWith("/") ? path.substring(1) : path);
-                if (is != null) {
-                    System.out.println("DEBUG: Found via context classloader");
-                }
-            }
-            
-            // Try 3: File system - same directory as JAR
-            if (is == null) {
-                try {
-                    final URL jarLocation = HttpSenderFactory.class.getProtectionDomain().getCodeSource().getLocation();
-                    System.out.println("DEBUG: JAR location: " + jarLocation);
-                    final Path jarPath = Paths.get(jarLocation.toURI());
-                    final Path parentPath = jarPath.getParent();
-                    if (parentPath == null) {
-                        System.out.println("DEBUG: JAR has no parent directory, skipping file system lookup");
-                    } else {
-                        final Path truststorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
-                        System.out.println("DEBUG: Trying file system path: " + truststorePath);
-                        final File truststoreFile = truststorePath.toFile();
-                        if (truststoreFile.exists()) {
-                            System.out.println("DEBUG: Found via file system");
-                            is = new FileInputStream(truststoreFile);
-                        }
-                    }
-                } catch (final URISyntaxException e) {
-                    System.out.println("DEBUG: Failed to resolve JAR path: " + e.getMessage());
-                }
-            }
-            
-            if (is == null) {
-                throw new RuntimeException("Truststore file not found: " + path
-                    + ". Tried classpath and file system locations.");
-            }
-            
-            try (InputStream finalIs = is) {
-                trustStore.load(finalIs, config.sslTruststorePassword() != null 
-                    ? config.sslTruststorePassword().toCharArray() : null);
-            }
-            final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(trustStore);
-            return tmf;
-        } catch (KeyStoreException
-                | IOException
-                | NoSuchAlgorithmException
-                | CertificateException e) {
-            throw new RuntimeException("Failed to load truststore: " + config.sslTruststoreLocation(), e);
         }
     }
 }
