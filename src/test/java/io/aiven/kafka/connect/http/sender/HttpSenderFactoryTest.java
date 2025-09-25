@@ -43,4 +43,28 @@ class HttpSenderFactoryTest {
         final var response = httpSender.send(request, HttpResponse.BodyHandlers.ofString());
         assertThat(response.statusCode()).isEqualTo(200);
     }
+
+    @Test
+    void testHttpClientWithTruststoreConfiguration() {
+        final var config = new HttpSinkConfig(Map.of(
+            "http.url", "https://example.com",
+            "http.authorization.type", "none",
+            "ssl.truststore.location", "truststore.jks",
+            "ssl.truststore.password", "password"
+        ));
+
+        final var httpClient = HttpSenderFactory.buildHttpClient(config);
+        assertThat(httpClient).isNotNull();
+    }
+
+    @Test
+    void testHttpClientWithoutSslConfiguration() {
+        final var config = new HttpSinkConfig(Map.of(
+            "http.url", "http://example.com",
+            "http.authorization.type", "none"
+        ));
+
+        final var httpClient = HttpSenderFactory.buildHttpClient(config);
+        assertThat(httpClient).isNotNull();
+    }
 }

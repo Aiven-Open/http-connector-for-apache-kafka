@@ -28,6 +28,9 @@ import java.nio.file.Paths;
 final class TruststoreLoader {
 
     static InputStream findTruststoreInputStream(final String path) {
+        if (path == null || path.trim().isEmpty()) {
+            return null;
+        }
         System.out.println("DEBUG: Looking for truststore at path: " + path);
         
         InputStream is = tryClasspathResource(path);
@@ -44,6 +47,9 @@ final class TruststoreLoader {
     }
     
     private static InputStream tryClasspathResource(final String path) {
+        if (path == null || path.trim().isEmpty()) {
+            return null;
+        }
         System.out.println("DEBUG: Trying class-based resource loading: " + path);
         final InputStream is = TruststoreLoader.class.getResourceAsStream(path);
         if (is != null) {
@@ -53,6 +59,9 @@ final class TruststoreLoader {
     }
     
     private static InputStream tryContextClassloader(final String path) {
+        if (path == null || path.trim().isEmpty()) {
+            return null;
+        }
         System.out.println("DEBUG: Trying context classloader: " + path);
         final InputStream is = Thread.currentThread().getContextClassLoader()
             .getResourceAsStream(path.startsWith("/") ? path.substring(1) : path);
@@ -63,6 +72,9 @@ final class TruststoreLoader {
     }
     
     private static InputStream tryFileSystem(final String path) {
+        if (path == null || path.trim().isEmpty()) {
+            return null;
+        }
         try {
             final URL jarLocation = TruststoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
             System.out.println("DEBUG: JAR location: " + jarLocation);

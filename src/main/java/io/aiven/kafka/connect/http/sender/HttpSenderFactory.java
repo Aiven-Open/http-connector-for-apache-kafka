@@ -43,8 +43,6 @@ public final class HttpSenderFactory {
         }
     }
 
-
-
     static HttpClient buildHttpClient(final HttpSinkConfig config) {
         final var clientBuilder = HttpClient.newBuilder();
         configureProxy(config, clientBuilder);
