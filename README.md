@@ -2,7 +2,7 @@
 
 ![HTTP logo](docs/IETF-Badge-HTTP.png)
 
-This is a sink [Apache Kafka Connect](https://kafka.apache.org/documentation/#connect) connector that sends Kafka records over HTTP.
+This is a sink [Apache Kafka Connect](https://kafka.apache.org/documentation/#connect) connector that sends Kafka records over HTTP/S.
 
 ## Status
 
