@@ -44,8 +44,8 @@ public final class HttpSinkConfig extends AbstractConfig {
     private static final String HTTP_PROXY_HOST = "http.proxy.host";
     private static final String HTTP_PROXY_PORT = "http.proxy.port";
     private static final String HTTP_SSL_TRUST_ALL_CERTIFICATES = "http.ssl.trust.all.certs";
-    private static final String SSL_KEYSTORE_LOCATION = "ssl.keystore.location";
-    private static final String SSL_KEYSTORE_PASSWORD = "ssl.keystore.password";
+    private static final String SSL_TRUSTSTORE_LOCATION = "ssl.truststore.location";
+    private static final String SSL_TRUSTSTORE_PASSWORD = "ssl.truststore.password";
 
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
@@ -152,26 +152,26 @@ public final class HttpSinkConfig extends AbstractConfig {
             HTTP_SSL_TRUST_ALL_CERTIFICATES
         );
         configDef.define(
-            SSL_KEYSTORE_LOCATION,
+            SSL_TRUSTSTORE_LOCATION,
             Type.STRING,
             null,
             ConfigDef.Importance.LOW,
-            "Path to the SSL keystore file.",
+            "Path to the SSL truststore file.",
             CONNECTION_GROUP,
             groupCounter++,
             ConfigDef.Width.LONG,
-            SSL_KEYSTORE_LOCATION
+            SSL_TRUSTSTORE_LOCATION
         );
         configDef.define(
-            SSL_KEYSTORE_PASSWORD,
+            SSL_TRUSTSTORE_PASSWORD,
             Type.PASSWORD,
             null,
             ConfigDef.Importance.LOW,
-            "Password for the SSL keystore.",
+            "Password for the SSL truststore.",
             CONNECTION_GROUP,
             groupCounter++,
             ConfigDef.Width.MEDIUM,
-            SSL_KEYSTORE_PASSWORD
+            SSL_TRUSTSTORE_PASSWORD
         );
 
         configDef.define(
@@ -835,12 +835,12 @@ public final class HttpSinkConfig extends AbstractConfig {
         return getBoolean(HTTP_SSL_TRUST_ALL_CERTIFICATES);
     }
 
-    public final String sslKeystoreLocation() {
-        return getString(SSL_KEYSTORE_LOCATION);
+    public final String sslTruststoreLocation() {
+        return getString(SSL_TRUSTSTORE_LOCATION);
     }
 
-    public final String sslKeystorePassword() {
-        final Password password = getPassword(SSL_KEYSTORE_PASSWORD);
+    public final String sslTruststorePassword() {
+        final Password password = getPassword(SSL_TRUSTSTORE_PASSWORD);
         return password != null ? password.value() : null;
     }
 

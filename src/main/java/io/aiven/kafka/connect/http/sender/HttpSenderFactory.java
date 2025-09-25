@@ -16,10 +16,10 @@
 
 package io.aiven.kafka.connect.http.sender;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 
 import java.io.File;
@@ -38,7 +38,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -111,14 +110,14 @@ public final class HttpSenderFactory {
         if (config.hasProxy()) {
             clientBuilder.proxy(ProxySelector.of(config.proxy()));
         }
-        if (config.sslTrustAllCertificates() || config.sslKeystoreLocation() != null) {
+        if (config.sslTrustAllCertificates() || config.sslTruststoreLocation() != null) {
             try {
                 final SSLContext sslContext = SSLContext.getInstance("TLS");
                 if (config.sslTrustAllCertificates()) {
                     sslContext.init(null, new TrustManager[] {DUMMY_TRUST_MANAGER}, new SecureRandom());
                 } else {
-                    final KeyManagerFactory kmf = loadKeystore(config);
-                    sslContext.init(kmf != null ? kmf.getKeyManagers() : null, null, new SecureRandom());
+                    final TrustManagerFactory tmf = loadTruststore(config);
+                    sslContext.init(null, tmf != null ? tmf.getTrustManagers() : null, new SecureRandom());
                 }
                 clientBuilder.sslContext(sslContext);
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -129,14 +128,14 @@ public final class HttpSenderFactory {
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private static KeyManagerFactory loadKeystore(final HttpSinkConfig config) {
-        if (config.sslKeystoreLocation() == null) {
+    private static TrustManagerFactory loadTruststore(final HttpSinkConfig config) {
+        if (config.sslTruststoreLocation() == null) {
             return null;
         }
         try {
-            final KeyStore keyStore = KeyStore.getInstance("JKS");
-            final String path = config.sslKeystoreLocation();
-            System.out.println("DEBUG: Looking for keystore at path: " + path);
+            final KeyStore trustStore = KeyStore.getInstance("JKS");
+            final String path = config.sslTruststoreLocation();
+            System.out.println("DEBUG: Looking for truststore at path: " + path);
             System.out.println("DEBUG: Class classloader: " + HttpSenderFactory.class.getClassLoader());
             System.out.println("DEBUG: Context classloader: " + Thread.currentThread().getContextClassLoader());
             
@@ -169,12 +168,12 @@ public final class HttpSenderFactory {
                     if (parentPath == null) {
                         System.out.println("DEBUG: JAR has no parent directory, skipping file system lookup");
                     } else {
-                        final Path keystorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
-                        System.out.println("DEBUG: Trying file system path: " + keystorePath);
-                        final File keystoreFile = keystorePath.toFile();
-                        if (keystoreFile.exists()) {
+                        final Path truststorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
+                        System.out.println("DEBUG: Trying file system path: " + truststorePath);
+                        final File truststoreFile = truststorePath.toFile();
+                        if (truststoreFile.exists()) {
                             System.out.println("DEBUG: Found via file system");
-                            is = new FileInputStream(keystoreFile);
+                            is = new FileInputStream(truststoreFile);
                         }
                     }
                 } catch (final URISyntaxException e) {
@@ -183,24 +182,22 @@ public final class HttpSenderFactory {
             }
             
             if (is == null) {
-                throw new RuntimeException("Keystore file not found: " + path
+                throw new RuntimeException("Truststore file not found: " + path
                     + ". Tried classpath and file system locations.");
             }
             
             try (InputStream finalIs = is) {
-                keyStore.load(finalIs, config.sslKeystorePassword() != null 
-                    ? config.sslKeystorePassword().toCharArray() : null);
+                trustStore.load(finalIs, config.sslTruststorePassword() != null 
+                    ? config.sslTruststorePassword().toCharArray() : null);
             }
-            final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(keyStore, config.sslKeystorePassword() != null 
-                ? config.sslKeystorePassword().toCharArray() : null);
-            return kmf;
+            final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
+            return tmf;
         } catch (KeyStoreException
                 | IOException
                 | NoSuchAlgorithmException
-                | CertificateException
-                | UnrecoverableKeyException e) {
-            throw new RuntimeException("Failed to load keystore: " + config.sslKeystoreLocation(), e);
+                | CertificateException e) {
+            throw new RuntimeException("Failed to load truststore: " + config.sslTruststoreLocation(), e);
         }
     }
 }
