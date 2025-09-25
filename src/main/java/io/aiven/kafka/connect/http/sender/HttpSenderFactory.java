@@ -16,17 +16,23 @@
 
 package io.aiven.kafka.connect.http.sender;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.http.HttpClient;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -99,15 +105,43 @@ public final class HttpSenderFactory {
         if (config.hasProxy()) {
             clientBuilder.proxy(ProxySelector.of(config.proxy()));
         }
-        if (config.sslTrustAllCertificates()) {
+        if (config.sslTrustAllCertificates() || config.sslKeystoreLocation() != null) {
             try {
                 final SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[] {DUMMY_TRUST_MANAGER}, new SecureRandom());
+                if (config.sslTrustAllCertificates()) {
+                    sslContext.init(null, new TrustManager[] {DUMMY_TRUST_MANAGER}, new SecureRandom());
+                } else {
+                    final KeyManagerFactory kmf = loadKeystore(config);
+                    sslContext.init(kmf != null ? kmf.getKeyManagers() : null, null, new SecureRandom());
+                }
                 clientBuilder.sslContext(sslContext);
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
                 throw new RuntimeException(e);
             }
         }
         return clientBuilder.build();
+    }
+
+    private static KeyManagerFactory loadKeystore(final HttpSinkConfig config) {
+        if (config.sslKeystoreLocation() == null) {
+            return null;
+        }
+        try {
+            final KeyStore keyStore = KeyStore.getInstance("JKS");
+            try (InputStream is = HttpSenderFactory.class.getResourceAsStream(config.sslKeystoreLocation())) {
+                keyStore.load(is, config.sslKeystorePassword() != null 
+                    ? config.sslKeystorePassword().toCharArray() : null);
+            }
+            final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(keyStore, config.sslKeystorePassword() != null 
+                ? config.sslKeystorePassword().toCharArray() : null);
+            return kmf;
+        } catch (KeyStoreException
+                | IOException
+                | NoSuchAlgorithmException
+                | CertificateException
+                | UnrecoverableKeyException e) {
+            throw new RuntimeException("Failed to load keystore: " + config.sslKeystoreLocation(), e);
+        }
     }
 }
