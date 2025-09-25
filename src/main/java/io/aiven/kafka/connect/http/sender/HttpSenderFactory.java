@@ -22,11 +22,17 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ProxySelector;
 import java.net.Socket;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.http.HttpClient;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -122,14 +128,67 @@ public final class HttpSenderFactory {
         return clientBuilder.build();
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private static KeyManagerFactory loadKeystore(final HttpSinkConfig config) {
         if (config.sslKeystoreLocation() == null) {
             return null;
         }
         try {
             final KeyStore keyStore = KeyStore.getInstance("JKS");
-            try (InputStream is = HttpSenderFactory.class.getResourceAsStream(config.sslKeystoreLocation())) {
-                keyStore.load(is, config.sslKeystorePassword() != null 
+            final String path = config.sslKeystoreLocation();
+            System.out.println("DEBUG: Looking for keystore at path: " + path);
+            System.out.println("DEBUG: Class classloader: " + HttpSenderFactory.class.getClassLoader());
+            System.out.println("DEBUG: Context classloader: " + Thread.currentThread().getContextClassLoader());
+            
+            InputStream is = null;
+            
+            // Try 1: Class-based resource loading
+            System.out.println("DEBUG: Trying class-based resource loading: " + path);
+            is = HttpSenderFactory.class.getResourceAsStream(path);
+            if (is != null) {
+                System.out.println("DEBUG: Found via class-based resource loading");
+            }
+            
+            // Try 2: Context classloader
+            if (is == null) {
+                System.out.println("DEBUG: Trying context classloader: " + path);
+                is = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream(path.startsWith("/") ? path.substring(1) : path);
+                if (is != null) {
+                    System.out.println("DEBUG: Found via context classloader");
+                }
+            }
+            
+            // Try 3: File system - same directory as JAR
+            if (is == null) {
+                try {
+                    final URL jarLocation = HttpSenderFactory.class.getProtectionDomain().getCodeSource().getLocation();
+                    System.out.println("DEBUG: JAR location: " + jarLocation);
+                    final Path jarPath = Paths.get(jarLocation.toURI());
+                    final Path parentPath = jarPath.getParent();
+                    if (parentPath == null) {
+                        System.out.println("DEBUG: JAR has no parent directory, skipping file system lookup");
+                    } else {
+                        final Path keystorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
+                        System.out.println("DEBUG: Trying file system path: " + keystorePath);
+                        final File keystoreFile = keystorePath.toFile();
+                        if (keystoreFile.exists()) {
+                            System.out.println("DEBUG: Found via file system");
+                            is = new FileInputStream(keystoreFile);
+                        }
+                    }
+                } catch (final URISyntaxException e) {
+                    System.out.println("DEBUG: Failed to resolve JAR path: " + e.getMessage());
+                }
+            }
+            
+            if (is == null) {
+                throw new RuntimeException("Keystore file not found: " + path
+                    + ". Tried classpath and file system locations.");
+            }
+            
+            try (InputStream finalIs = is) {
+                keyStore.load(finalIs, config.sslKeystorePassword() != null 
                     ? config.sslKeystorePassword().toCharArray() : null);
             }
             final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
