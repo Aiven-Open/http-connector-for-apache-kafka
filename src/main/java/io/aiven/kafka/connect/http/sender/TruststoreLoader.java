@@ -25,14 +25,19 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 final class TruststoreLoader {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TruststoreLoader.class);
 
     static InputStream findTruststoreInputStream(final String path) {
         if (path == null || path.trim().isEmpty()) {
             return null;
         }
-        System.out.println("DEBUG: Looking for truststore at path: " + path);
-        
+        LOG.info("Looking for truststore at path: {}", path);
+
         InputStream is = tryClasspathResource(path);
         if (is != null) {
             return is;
@@ -50,49 +55,49 @@ final class TruststoreLoader {
         if (path == null || path.trim().isEmpty()) {
             return null;
         }
-        System.out.println("DEBUG: Trying class-based resource loading: " + path);
+        LOG.debug("Trying class-based resource loading: {}", path);
         final InputStream is = TruststoreLoader.class.getResourceAsStream(path);
         if (is != null) {
-            System.out.println("DEBUG: Found via class-based resource loading");
+            LOG.info("Found via class-based resource loading");
         }
         return is;
     }
-    
+
     private static InputStream tryContextClassloader(final String path) {
         if (path == null || path.trim().isEmpty()) {
             return null;
         }
-        System.out.println("DEBUG: Trying context classloader: " + path);
+        LOG.debug("Trying context classloader: {}", path);
         final InputStream is = Thread.currentThread().getContextClassLoader()
             .getResourceAsStream(path.startsWith("/") ? path.substring(1) : path);
         if (is != null) {
-            System.out.println("DEBUG: Found via context classloader");
+            LOG.info("Found via context classloader");
         }
         return is;
     }
-    
+
     private static InputStream tryFileSystem(final String path) {
         if (path == null || path.trim().isEmpty()) {
             return null;
         }
         try {
             final URL jarLocation = TruststoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
-            System.out.println("DEBUG: JAR location: " + jarLocation);
+            LOG.debug("JAR location: {}", jarLocation);
             final Path jarPath = Paths.get(jarLocation.toURI());
             final Path parentPath = jarPath.getParent();
             if (parentPath == null) {
-                System.out.println("DEBUG: JAR has no parent directory, skipping file system lookup");
+                LOG.info("JAR has no parent directory, skipping file system lookup");
                 return null;
             }
             final Path truststorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
-            System.out.println("DEBUG: Trying file system path: " + truststorePath);
+            LOG.debug("Trying file system path: {}", truststorePath);
             final File truststoreFile = truststorePath.toFile();
             if (truststoreFile.exists()) {
-                System.out.println("DEBUG: Found via file system");
+                LOG.info("Found via file system");
                 return new FileInputStream(truststoreFile);
             }
         } catch (final URISyntaxException | IOException e) {
-            System.out.println("DEBUG: Failed to resolve JAR path: " + e.getMessage());
+            LOG.error("Failed to resolve JAR path: {}", e.getMessage());
         }
         return null;
     }
