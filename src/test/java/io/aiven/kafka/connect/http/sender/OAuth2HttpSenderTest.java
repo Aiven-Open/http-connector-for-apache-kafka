@@ -34,6 +34,9 @@ import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -228,8 +231,13 @@ class OAuth2HttpSenderTest extends HttpSenderTestBase {
 
     }
 
-    @Test
-    void refreshAccessToken() throws Exception {
+    @ParameterizedTest
+    @CsvSource( {
+            "'401'    , '401'",
+            "'401,403', '401'",
+            "'401,403', '403'"
+    })
+    void refreshAccessToken(final String configuredErrorCodes, final String sendErrorCode) throws Exception {
 
         // first call to retrieve an access token
         final HttpResponse<String> mockedAccessTokenResponse = mock(HttpResponse.class);
@@ -241,15 +249,17 @@ class OAuth2HttpSenderTest extends HttpSenderTestBase {
         when(oauth2AccessTokenHttpSender.call()).thenReturn(
             mockedAccessTokenResponse, mockedAccessTokenResponseRefreshed);
 
-        // Mock a 2nd response with 401.
+        // Mock a 2nd response with error code.
         final HttpResponse<String> errorResponse = mock(HttpResponse.class);
-        when(errorResponse.statusCode()).thenReturn(401);
-        // Mock a 2nd response with 401.
+        when(errorResponse.statusCode()).thenReturn(Integer.parseInt(sendErrorCode));
+        // Mock a 2nd response with 200.
         final HttpResponse<String> normalResponse = mock(HttpResponse.class);
         when(normalResponse.statusCode()).thenReturn(200);
 
         // Build the configuration
-        final HttpSinkConfig config = new HttpSinkConfig(defaultConfig());
+        Map<String,String> configMap =new HashMap<>(defaultConfig());
+        configMap.put("oauth2.token.renew.on.status.codes", configuredErrorCodes);
+        final HttpSinkConfig config = new HttpSinkConfig(configMap);
 
         // Mock the Client and Response
         when(mockedClient.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(mockedResponse,
