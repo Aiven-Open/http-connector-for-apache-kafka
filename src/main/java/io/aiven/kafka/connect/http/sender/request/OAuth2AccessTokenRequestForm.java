@@ -34,6 +34,7 @@ public class OAuth2AccessTokenRequestForm {
 
     private final String clientSecretProperty;
     private final String clientSecret;
+    private final String bodyParams;
 
     private OAuth2AccessTokenRequestForm(
         final String grantTypeProperty,
@@ -42,7 +43,8 @@ public class OAuth2AccessTokenRequestForm {
         final String clientIdProperty,
         final String clientId,
         final String clientSecretProperty,
-        final String clientSecret
+        final String clientSecret,
+        final String bodyParams
     ) {
         this.grantTypeProperty = grantTypeProperty;
         this.grantType = grantType;
@@ -51,12 +53,16 @@ public class OAuth2AccessTokenRequestForm {
         this.clientId = clientId;
         this.clientSecretProperty = clientSecretProperty;
         this.clientSecret = clientSecret;
+        this.bodyParams = bodyParams;
     }
 
     public String toBodyString() {
         final StringJoiner stringJoiner = new StringJoiner("&").add(encodeNameAndValue(grantTypeProperty, grantType));
         if (scope != null) {
             stringJoiner.add(encodeNameAndValue(SCOPE, scope));
+        }
+        if (bodyParams != null) {
+            stringJoiner.add(bodyParams);
         }
         if (clientId != null && clientSecret != null) {
             stringJoiner
@@ -89,6 +95,7 @@ public class OAuth2AccessTokenRequestForm {
 
         private String clientSecretProperty;
         private String clientSecret;
+        private String bodyParams;
 
         private Builder() {
         }
@@ -100,6 +107,11 @@ public class OAuth2AccessTokenRequestForm {
 
         public Builder withGrantType(final String grantType) {
             this.grantType = grantType;
+            return this;
+        }
+
+        public Builder withBodyParams(final String bodyParams) {
+            this.bodyParams = bodyParams;
             return this;
         }
 
@@ -144,7 +156,8 @@ public class OAuth2AccessTokenRequestForm {
             }
 
             return new OAuth2AccessTokenRequestForm(
-                grantTypeProperty, grantType, scope, clientIdProperty, clientId, clientSecretProperty, clientSecret);
+                grantTypeProperty, grantType, scope, clientIdProperty, clientId,
+                    clientSecretProperty, clientSecret, bodyParams);
         }
 
     }

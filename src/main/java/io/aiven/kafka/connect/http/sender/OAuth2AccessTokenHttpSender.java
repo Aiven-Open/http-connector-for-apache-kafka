@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Objects;
 
+import io.aiven.kafka.connect.http.config.HttpMethodsType;
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 import io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode;
 import io.aiven.kafka.connect.http.sender.request.OAuth2AccessTokenRequestForm;
@@ -33,7 +34,7 @@ import static io.aiven.kafka.connect.http.config.OAuth2AuthorizationMode.HEADER;
 class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSender {
 
     OAuth2AccessTokenHttpSender(final HttpSinkConfig config, final HttpClient httpClient) {
-        super(config, new AccessTokenHttpRequestBuilder(), httpClient);
+        super(config, new AccessTokenHttpRequestBuilder(), httpClient, HttpMethodsType.POST);
     }
 
     HttpResponse<String> call() {
@@ -41,6 +42,7 @@ class OAuth2AccessTokenHttpSender extends AbstractHttpSender implements HttpSend
             .newBuilder()
             .withGrantTypeProperty(config.oauth2GrantTypeProperty())
             .withGrantType(config.oauth2GrantType())
+            .withBodyParams(config.getOauth2BodyParams())
             .withScope(config.oauth2ClientScope());
 
         if (config.oauth2AuthorizationMode() == OAuth2AuthorizationMode.URL) {
