@@ -43,6 +43,27 @@ Connection
   * Valid Values: Key value pair string list with format header:value
   * Importance: low
 
+``http.ssl.trust.all.certs``
+  Disable hostname verification. Not recommended for production environments.
+
+  * Type: boolean
+  * Default: false
+  * Importance: low
+
+``http.ssl.truststore.location``
+  Path to the SSL truststore file.
+
+  * Type: string
+  * Default: null
+  * Importance: low
+
+``http.ssl.truststore.password``
+  Password for the SSL truststore.
+
+  * Type: password
+  * Default: null
+  * Importance: low
+
 ``oauth2.access.token.url``
   The URL to be used for fetching an access token. Client Credentials is the only supported grant type.
 
