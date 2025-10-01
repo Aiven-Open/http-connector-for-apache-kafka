@@ -94,14 +94,12 @@ final class SslContextBuilder {
             final KeyStore trustStore = KeyStore.getInstance("JKS");
             final String path = config.sslTruststoreLocation();
             
-            final InputStream is = TruststoreLoader.findTruststoreInputStream(path);
-            if (is == null) {
-                throw new RuntimeException("Truststore file not found: " + path
-                    + ". Tried classpath and file system locations.");
-            }
-            
-            try (InputStream finalIs = is) {
-                trustStore.load(finalIs, config.sslTruststorePassword() != null 
+            try (InputStream is = TruststoreLoader.findTruststoreInputStream(path)) {
+                if (is == null) {
+                    throw new RuntimeException("Truststore file not found: " + path
+                        + ". Tried classpath and file system locations.");
+                }
+                trustStore.load(is, config.sslTruststorePassword() != null 
                     ? config.sslTruststorePassword().toCharArray() : null);
             }
             final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
