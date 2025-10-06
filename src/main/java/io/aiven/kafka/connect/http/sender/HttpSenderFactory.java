@@ -57,7 +57,7 @@ public final class HttpSenderFactory {
     }
 
     private static void configureSsl(final HttpSinkConfig config, final HttpClient.Builder clientBuilder) {
-        if (config.sslTrustAllCertificates() || config.sslTruststoreLocation() != null) {
+        if (config.sslTrustAllCertificates() || config.sslTrustStoreLocation() != null) {
             try {
                 clientBuilder.sslContext(SslContextBuilder.createSslContext(config));
             } catch (NoSuchAlgorithmException | KeyManagementException e) {

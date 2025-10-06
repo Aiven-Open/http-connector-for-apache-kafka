@@ -28,11 +28,11 @@ import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class TruststoreLoader {
+final class TrustStoreLoader {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TruststoreLoader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TrustStoreLoader.class);
 
-    static InputStream findTruststoreInputStream(final String path) {
+    static InputStream findTrustStoreInputStream(final String path) {
         if (path == null || path.trim().isEmpty()) {
             return null;
         }
@@ -56,7 +56,7 @@ final class TruststoreLoader {
             return null;
         }
         LOG.debug("Trying class-based resource loading: {}", path);
-        final InputStream is = TruststoreLoader.class.getResourceAsStream(path);
+        final InputStream is = TrustStoreLoader.class.getResourceAsStream(path);
         if (is != null) {
             LOG.info("Found via class-based resource loading");
         }
@@ -81,7 +81,7 @@ final class TruststoreLoader {
             return null;
         }
         try {
-            final URL jarLocation = TruststoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
+            final URL jarLocation = TrustStoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
             LOG.debug("JAR location: {}", jarLocation);
             final Path jarPath = Paths.get(jarLocation.toURI());
             final Path parentPath = jarPath.getParent();

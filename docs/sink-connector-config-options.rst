@@ -51,14 +51,15 @@ Connection
   * Importance: low
 
 ``http.ssl.truststore.location``
-  Path to the SSL truststore file.
+  Path to the SSL truststore file. Only JKS (Java KeyStore) format is supported.
 
   * Type: string
   * Default: null
+  * Valid Values: Path to JKS truststore file
   * Importance: low
 
 ``http.ssl.truststore.password``
-  Password for the SSL truststore.
+  Password for the SSL truststore. Required when truststore location is specified.
 
   * Type: password
   * Default: null

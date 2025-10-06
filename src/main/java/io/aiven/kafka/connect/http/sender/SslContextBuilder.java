@@ -80,27 +80,27 @@ final class SslContextBuilder {
         if (config.sslTrustAllCertificates()) {
             sslContext.init(null, new TrustManager[] {DUMMY_TRUST_MANAGER}, new SecureRandom());
         } else {
-            final TrustManagerFactory tmf = loadTruststore(config);
+            final TrustManagerFactory tmf = loadTrustStore(config);
             sslContext.init(null, tmf != null ? tmf.getTrustManagers() : null, new SecureRandom());
         }
         return sslContext;
     }
 
-    private static TrustManagerFactory loadTruststore(final HttpSinkConfig config) {
-        if (config.sslTruststoreLocation() == null) {
+    private static TrustManagerFactory loadTrustStore(final HttpSinkConfig config) {
+        if (config.sslTrustStoreLocation() == null) {
             return null;
         }
         try {
             final KeyStore trustStore = KeyStore.getInstance("JKS");
-            final String path = config.sslTruststoreLocation();
+            final String path = config.sslTrustStoreLocation();
             
-            try (InputStream is = TruststoreLoader.findTruststoreInputStream(path)) {
+            try (InputStream is = TrustStoreLoader.findTrustStoreInputStream(path)) {
                 if (is == null) {
-                    throw new RuntimeException("Truststore file not found: " + path
+                    throw new RuntimeException("TrustStore file not found: " + path
                         + ". Tried classpath and file system locations.");
                 }
-                trustStore.load(is, config.sslTruststorePassword() != null 
-                    ? config.sslTruststorePassword().toCharArray() : null);
+                trustStore.load(is, config.sslTrustStorePassword() != null 
+                    ? config.sslTrustStorePassword().toCharArray() : null);
             }
             final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(trustStore);
@@ -109,7 +109,7 @@ final class SslContextBuilder {
                 | IOException
                 | NoSuchAlgorithmException
                 | CertificateException e) {
-            throw new RuntimeException("Failed to load truststore: " + config.sslTruststoreLocation(), e);
+            throw new RuntimeException("Failed to load truststore: " + config.sslTrustStoreLocation(), e);
         }
     }
 }

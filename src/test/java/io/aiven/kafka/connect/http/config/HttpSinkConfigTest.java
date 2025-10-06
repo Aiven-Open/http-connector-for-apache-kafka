@@ -638,7 +638,7 @@ final class HttpSinkConfigTest {
     }
 
     @Test
-    void sslTruststoreConfiguration() {
+    void sslTrustStoreConfiguration() {
         final Map<String, String> properties = Map.of(
             "http.url", "https://localhost:8090",
             "http.authorization.type", "none",
@@ -647,12 +647,12 @@ final class HttpSinkConfigTest {
         );
 
         final var config = new HttpSinkConfig(properties);
-        assertThat(config.sslTruststoreLocation()).isEqualTo("/path/to/truststore.jks");
-        assertThat(config.sslTruststorePassword()).isEqualTo("password123");
+        assertThat(config.sslTrustStoreLocation()).isEqualTo("/path/to/truststore.jks");
+        assertThat(config.sslTrustStorePassword()).isEqualTo("password123");
     }
 
     @Test
-    void sslTruststoreLocationOnly() {
+    void sslTrustStoreLocationOnly() {
         final Map<String, String> properties = Map.of(
             "http.url", "https://localhost:8090",
             "http.authorization.type", "none",
@@ -660,7 +660,7 @@ final class HttpSinkConfigTest {
         );
 
         final var config = new HttpSinkConfig(properties);
-        assertThat(config.sslTruststoreLocation()).isEqualTo("/path/to/truststore.jks");
-        assertThat(config.sslTruststorePassword()).isNull();
+        assertThat(config.sslTrustStoreLocation()).isEqualTo("/path/to/truststore.jks");
+        assertThat(config.sslTrustStorePassword()).isNull();
     }
 }

@@ -22,17 +22,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TruststoreLoaderTest {
+class TrustStoreLoaderTest {
 
     @Test
-    void findTruststoreInputStreamReturnsNullForNonexistentFile() {
-        final InputStream result = TruststoreLoader.findTruststoreInputStream("nonexistent.jks");
+    void findTrustStoreInputStreamReturnsNullForNonexistentFile() {
+        final InputStream result = TrustStoreLoader.findTrustStoreInputStream("nonexistent.jks");
         assertThat(result).isNull();
     }
 
     @Test
-    void findTruststoreInputStreamReturnsNullForEmptyPath() {
-        final InputStream result = TruststoreLoader.findTruststoreInputStream("");
+    void findTrustStoreInputStreamReturnsNullForEmptyPath() {
+        final InputStream result = TrustStoreLoader.findTrustStoreInputStream("");
         assertThat(result).isNull();
     }
 }

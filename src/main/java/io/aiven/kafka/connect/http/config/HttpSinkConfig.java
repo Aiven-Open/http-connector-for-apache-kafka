@@ -835,11 +835,11 @@ public final class HttpSinkConfig extends AbstractConfig {
         return getBoolean(HTTP_SSL_TRUST_ALL_CERTIFICATES);
     }
 
-    public final String sslTruststoreLocation() {
+    public final String sslTrustStoreLocation() {
         return getString(HTTP_SSL_TRUSTSTORE_LOCATION);
     }
 
-    public final String sslTruststorePassword() {
+    public final String sslTrustStorePassword() {
         final Password password = getPassword(HTTP_SSL_TRUSTSTORE_PASSWORD);
         return password != null ? password.value() : null;
     }

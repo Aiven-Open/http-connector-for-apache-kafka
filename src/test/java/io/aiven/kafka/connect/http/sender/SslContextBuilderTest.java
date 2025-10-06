@@ -44,7 +44,7 @@ class SslContextBuilderTest {
     }
 
     @Test
-    void createSslContextWithoutTruststore() throws Exception {
+    void createSslContextWithoutTrustStore() throws Exception {
         final var config = new HttpSinkConfig(Map.of(
             "http.url", "https://example.com",
             "http.authorization.type", "none"
@@ -57,7 +57,7 @@ class SslContextBuilderTest {
     }
 
     @Test
-    void createSslContextWithInvalidTruststore() {
+    void createSslContextWithInvalidTrustStore() {
         final var config = new HttpSinkConfig(Map.of(
             "http.url", "https://example.com",
             "http.authorization.type", "none",
@@ -66,6 +66,6 @@ class SslContextBuilderTest {
 
         assertThatThrownBy(() -> SslContextBuilder.createSslContext(config))
             .isInstanceOf(RuntimeException.class)
-            .hasMessageContaining("Truststore file not found");
+            .hasMessageContaining("TrustStore file not found");
     }
 }
