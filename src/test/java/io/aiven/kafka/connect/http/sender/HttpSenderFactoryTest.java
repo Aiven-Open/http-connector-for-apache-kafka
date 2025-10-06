@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
@@ -73,6 +72,9 @@ class HttpSenderFactoryTest {
         final var jarLocation = HttpSenderFactoryTest.class.getProtectionDomain().getCodeSource().getLocation();
         final Path jarPath = Paths.get(jarLocation.toURI());
         final Path parentPath = jarPath.getParent();
+        if (parentPath == null) {
+            throw new RuntimeException("Unable to determine parent directory for JAR location");
+        }
         truststorePath = parentPath.resolve(TRUSTSTORE_FILENAME);
         createTestTrustStore(truststorePath, TRUSTSTORE_PASSWORD);
     }
@@ -81,7 +83,10 @@ class HttpSenderFactoryTest {
     void tearDown() throws IOException {
         // Clean up the test truststore file after each test
         if (truststorePath != null && truststorePath.toFile().exists()) {
-            truststorePath.toFile().delete();
+            final boolean deleted = truststorePath.toFile().delete();
+            if (!deleted) {
+                throw new IOException("Failed to delete test truststore file: " + truststorePath);
+            }
         }
     }
 
