@@ -135,6 +135,8 @@ dependencies {
     testImplementation("org.mockito:mockito-core:$mockitoVersion")
     testImplementation("org.mockito:mockito-junit-jupiter:$mockitoVersion")
     testImplementation("org.assertj:assertj-core:$assertjVersion")
+    testImplementation("org.bouncycastle:bcprov-jdk15on:1.70")
+    testImplementation("org.bouncycastle:bcpkix-jdk15on:1.70")
 
     integrationTestRuntimeOnly("io.confluent:kafka-avro-serializer:$confluentPlatformVersion")
     integrationTestRuntimeOnly("io.confluent:kafka-connect-avro-converter:$confluentPlatformVersion")
