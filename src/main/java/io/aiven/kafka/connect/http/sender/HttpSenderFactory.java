@@ -16,19 +16,10 @@
 
 package io.aiven.kafka.connect.http.sender;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
-
 import java.net.ProxySelector;
-import java.net.Socket;
 import java.net.http.HttpClient;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 import org.apache.kafka.connect.errors.ConnectException;
 
@@ -52,62 +43,26 @@ public final class HttpSenderFactory {
         }
     }
 
-    private static final TrustManager DUMMY_TRUST_MANAGER = new X509ExtendedTrustManager() {
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final Socket socket)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final Socket socket)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return new java.security.cert.X509Certificate[0];
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final java.security.cert.X509Certificate[] chain, final String authType)
-            throws CertificateException {
-        }
-    };
-
     static HttpClient buildHttpClient(final HttpSinkConfig config) {
         final var clientBuilder = HttpClient.newBuilder();
+        configureProxy(config, clientBuilder);
+        configureSsl(config, clientBuilder);
+        return clientBuilder.build();
+    }
+
+    private static void configureProxy(final HttpSinkConfig config, final HttpClient.Builder clientBuilder) {
         if (config.hasProxy()) {
             clientBuilder.proxy(ProxySelector.of(config.proxy()));
         }
-        if (config.sslTrustAllCertificates()) {
+    }
+
+    private static void configureSsl(final HttpSinkConfig config, final HttpClient.Builder clientBuilder) {
+        if (config.sslTrustAllCertificates() || config.sslTrustStoreLocation() != null) {
             try {
-                final SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[] {DUMMY_TRUST_MANAGER}, new SecureRandom());
-                clientBuilder.sslContext(sslContext);
+                clientBuilder.sslContext(SslContextBuilder.createSslContext(config));
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
                 throw new RuntimeException(e);
             }
         }
-        return clientBuilder.build();
     }
 }

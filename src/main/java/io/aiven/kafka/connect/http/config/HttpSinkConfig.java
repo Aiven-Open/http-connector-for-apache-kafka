@@ -44,6 +44,8 @@ public final class HttpSinkConfig extends AbstractConfig {
     private static final String HTTP_PROXY_HOST = "http.proxy.host";
     private static final String HTTP_PROXY_PORT = "http.proxy.port";
     private static final String HTTP_SSL_TRUST_ALL_CERTIFICATES = "http.ssl.trust.all.certs";
+    private static final String HTTP_SSL_TRUSTSTORE_LOCATION = "http.ssl.truststore.location";
+    private static final String HTTP_SSL_TRUSTSTORE_PASSWORD = "http.ssl.truststore.password";
 
     private static final String HTTP_AUTHORIZATION_TYPE_CONFIG = "http.authorization.type";
     private static final String HTTP_HEADERS_AUTHORIZATION_CONFIG = "http.headers.authorization";
@@ -148,6 +150,28 @@ public final class HttpSinkConfig extends AbstractConfig {
             groupCounter++,
             ConfigDef.Width.SHORT,
             HTTP_SSL_TRUST_ALL_CERTIFICATES
+        );
+        configDef.define(
+            HTTP_SSL_TRUSTSTORE_LOCATION,
+            Type.STRING,
+            null,
+            ConfigDef.Importance.LOW,
+            "Path to the SSL truststore file.",
+            CONNECTION_GROUP,
+            groupCounter++,
+            ConfigDef.Width.LONG,
+            HTTP_SSL_TRUSTSTORE_LOCATION
+        );
+        configDef.define(
+            HTTP_SSL_TRUSTSTORE_PASSWORD,
+            Type.PASSWORD,
+            null,
+            ConfigDef.Importance.LOW,
+            "Password for the SSL truststore.",
+            CONNECTION_GROUP,
+            groupCounter++,
+            ConfigDef.Width.MEDIUM,
+            HTTP_SSL_TRUSTSTORE_PASSWORD
         );
 
         configDef.define(
@@ -809,6 +833,15 @@ public final class HttpSinkConfig extends AbstractConfig {
 
     public final boolean sslTrustAllCertificates() {
         return getBoolean(HTTP_SSL_TRUST_ALL_CERTIFICATES);
+    }
+
+    public final String sslTrustStoreLocation() {
+        return getString(HTTP_SSL_TRUSTSTORE_LOCATION);
+    }
+
+    public final String sslTrustStorePassword() {
+        final Password password = getPassword(HTTP_SSL_TRUSTSTORE_PASSWORD);
+        return password != null ? password.value() : null;
     }
 
     public static void main(final String... args) {
