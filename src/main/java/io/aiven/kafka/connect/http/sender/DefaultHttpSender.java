@@ -21,12 +21,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.time.Duration;
 
+import io.aiven.kafka.connect.http.config.HttpMethodsType;
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 
 class DefaultHttpSender extends AbstractHttpSender implements HttpSender {
 
     DefaultHttpSender(final HttpSinkConfig config, final HttpClient client) {
-        super(config, new DefaultHttpRequestBuilder(), client);
+        super(config, new DefaultHttpRequestBuilder(), client, null);
     }
 
     static class DefaultHttpRequestBuilder implements HttpRequestBuilder {

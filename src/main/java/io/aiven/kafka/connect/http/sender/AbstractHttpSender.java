@@ -24,6 +24,7 @@ import java.net.http.HttpResponse;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import io.aiven.kafka.connect.http.config.HttpMethodsType;
 import org.apache.kafka.connect.errors.ConnectException;
 
 import io.aiven.kafka.connect.http.config.HttpSinkConfig;
@@ -37,21 +38,44 @@ abstract class AbstractHttpSender {
 
     protected final HttpClient httpClient;
     protected final HttpSinkConfig config;
+    protected final HttpMethodsType method;
     protected final HttpRequestBuilder httpRequestBuilder;
 
     protected AbstractHttpSender(
-            final HttpSinkConfig config, final HttpRequestBuilder httpRequestBuilder, final HttpClient httpClient
+            final HttpSinkConfig config,
+            final HttpRequestBuilder httpRequestBuilder,
+            final HttpClient httpClient,
+            final HttpMethodsType method
     ) {
         this.config = Objects.requireNonNull(config);
         this.httpRequestBuilder = Objects.requireNonNull(httpRequestBuilder);
         this.httpClient = Objects.requireNonNull(httpClient);
+        this.method = method;
     }
 
     public final HttpResponse<String> send(final String body) {
-        final var requestBuilder =
-                httpRequestBuilder.build(config).POST(HttpRequest.BodyPublishers.ofString(body));
+        final var requestBuilder = prepareRequest(body);
         return sendWithRetries(requestBuilder, HttpResponseHandler.ON_HTTP_ERROR_RESPONSE_HANDLER,
                 config.maxRetries());
+    }
+
+    // seth http bethod based on config
+    private Builder prepareRequest(final String body) {
+        if(method == null) {
+            switch (config.httpMethod()) {
+                case POST:
+                    return httpRequestBuilder
+                            .build(config).POST(HttpRequest.BodyPublishers.ofString(body));
+                case PUT:
+                    return httpRequestBuilder
+                            .build(config).PUT(HttpRequest.BodyPublishers.ofString(body));
+                default:
+                    throw new ConnectException("Unsupported HTTP method: " + config.httpMethod());
+            }
+        } else
+            return httpRequestBuilder
+                    .build(config).POST(HttpRequest.BodyPublishers.ofString(body));
+
     }
 
     /**
