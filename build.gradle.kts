@@ -67,6 +67,7 @@ val hamcrestVersion = "2.2"
 val jacksonVersion = "2.17.2" // This Jackson is used in the tests.
 val jupiterVersion = "5.11.4"
 val kafkaVersion = "2.6.3"
+val jsonPath = "2.9.0"
 val jettyVersion = "9.4.51.v20230217"
 val junit4Version = "4.13.2"
 val jsr305Version = "3.0.2"
@@ -122,6 +123,7 @@ dependencies {
     compileOnly("com.google.code.findbugs:jsr305:$jsr305Version")
 
     implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
+    implementation("com.jayway.jsonpath:json-path:$jsonPath")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("org.slf4j:slf4j-api:$slf4japiVersion")
 
