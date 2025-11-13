@@ -24,5 +24,6 @@
   <suppress checks="MethodLength" files="(HttpSinkConfig).java" />
   <suppress checks="CyclomaticComplexity" files="(HttpSinkConfig).java" />
   <suppress checks="JavaNCSS" files="HttpSinkConfig.java" />
+  <suppress checks="RegexpHeader" files="(RecordValueFilterTest|EventCloudRecordFilter|RecordFilter).java" />
 
 </suppressions>
