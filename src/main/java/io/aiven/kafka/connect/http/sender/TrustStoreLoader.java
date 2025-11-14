@@ -81,16 +81,25 @@ final class TrustStoreLoader {
             return null;
         }
         try {
-            final URL jarLocation = TrustStoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
-            LOG.debug("JAR location: {}", jarLocation);
-            final Path jarPath = Paths.get(jarLocation.toURI());
-            final Path parentPath = jarPath.getParent();
-            if (parentPath == null) {
-                LOG.info("JAR has no parent directory, skipping file system lookup");
-                return null;
+            final Path truststorePath;
+            if (Paths.get(path).isAbsolute()) {
+                // Use absolute path directly
+                truststorePath = Paths.get(path);
+                LOG.info("Using absolute file system path: {}", truststorePath);
+            } else {
+                // Resolve relative path against JAR location
+                final URL jarLocation = TrustStoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
+                LOG.info("JAR location: {}", jarLocation);
+                final Path jarPath = Paths.get(jarLocation.toURI());
+                final Path parentPath = jarPath.getParent();
+                LOG.info("JAR parentPath: {}", parentPath);
+                if (parentPath == null) {
+                    LOG.info("JAR has no parent directory, skipping file system lookup");
+                    return null;
+                }
+                truststorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
+                LOG.info("Trying relative file system path: {}", truststorePath);
             }
-            final Path truststorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
-            LOG.debug("Trying file system path: {}", truststorePath);
             final File truststoreFile = truststorePath.toFile();
             if (truststoreFile.exists()) {
                 LOG.info("Found via file system");
