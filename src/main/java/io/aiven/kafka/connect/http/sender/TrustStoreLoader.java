@@ -91,6 +91,7 @@ final class TrustStoreLoader {
                 final URL jarLocation = TrustStoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
                 LOG.info("JAR location: {}", jarLocation);
                 final Path jarPath = Paths.get(jarLocation.toURI());
+                LOG.info("Using relative path against the JAR locataion: {}", jarPath);
                 final Path parentPath = jarPath.getParent();
                 LOG.info("JAR parentPath: {}", parentPath);
                 if (parentPath == null) {

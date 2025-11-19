@@ -52,6 +52,15 @@ Connection
 
 ``http.ssl.truststore.location``
   Path to the SSL truststore file. Only JKS (Java KeyStore) format is supported.
+  
+  The truststore file can be located in the following ways (searched in order):
+  
+  1. **Class-based resource loading**: File bundled within the connector JAR
+  2. **Context classloader resource loading**: File accessible via the broader classpath (including Kafka Connect plugin directory)
+  3. **File system path**: 
+     
+     - **Absolute path**: Direct file system path (e.g., ``/path/to/truststore.jks``)
+     - **Relative path**: Path relative to the connector JAR's parent directory
 
   * Type: string
   * Default: null
