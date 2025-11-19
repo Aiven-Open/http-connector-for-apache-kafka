@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
@@ -47,7 +46,7 @@ class TrustStoreLoaderTest {
         // Create a temporary trust store file
         final File trustStoreFile = tempDir.resolve("test-truststore.jks").toFile();
         try (final FileOutputStream fos = new FileOutputStream(trustStoreFile)) {
-            fos.write("dummy truststore content".getBytes());
+            fos.write("dummy truststore content".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
 
         // Test with absolute path
