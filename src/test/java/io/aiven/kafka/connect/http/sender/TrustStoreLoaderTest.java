@@ -16,9 +16,14 @@
 
 package io.aiven.kafka.connect.http.sender;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,5 +39,20 @@ class TrustStoreLoaderTest {
     void findTrustStoreInputStreamReturnsNullForEmptyPath() {
         final InputStream result = TrustStoreLoader.findTrustStoreInputStream("");
         assertThat(result).isNull();
+    }
+
+    @Test
+    void findTrustStoreInputStreamFindsFileWithAbsolutePath(@TempDir final Path tempDir) throws IOException {
+        // Create a temporary trust store file
+        final File trustStoreFile = tempDir.resolve("test-truststore.jks").toFile();
+        try (final FileOutputStream fos = new FileOutputStream(trustStoreFile)) {
+            fos.write("dummy truststore content".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        // Test with absolute path
+        final InputStream result = TrustStoreLoader.findTrustStoreInputStream(trustStoreFile.getAbsolutePath());
+        
+        assertThat(result).isNotNull();
+        result.close();
     }
 }
