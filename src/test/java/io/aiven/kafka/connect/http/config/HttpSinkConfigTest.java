@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -77,7 +78,9 @@ final class HttpSinkConfigTest {
                 .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty))
                 .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs))
                 .returns(false, from(HttpSinkConfig::hasProxy))
-                .returns(false, from(HttpSinkConfig::sslTrustAllCertificates));
+                .returns(false, from(HttpSinkConfig::sslTrustAllCertificates))
+                .returns(List.of(401), from(HttpSinkConfig::oauth2RenewTokenOnStatusCodes));
+
     }
 
     @Test
@@ -195,7 +198,8 @@ final class HttpSinkConfigTest {
                 "oauth2.client.secret", "client_secret",
                 "oauth2.client.authorization.mode", "url",
                 "oauth2.client.scope", "scope1,scope2",
-                "oauth2.response.token.property", "moooooo"
+                "oauth2.response.token.property", "moooooo",
+                "oauth2.token.renew.on.status.codes", "401, 403"
         );
 
         final var config = new HttpSinkConfig(oauth2Config);
@@ -206,7 +210,22 @@ final class HttpSinkConfigTest {
                 .returns("client_secret", from(httpSinkConfig -> httpSinkConfig.oauth2ClientSecret().value()))
                 .returns("scope1,scope2", from(HttpSinkConfig::oauth2ClientScope))
                 .returns(OAuth2AuthorizationMode.URL, from(HttpSinkConfig::oauth2AuthorizationMode))
-                .returns("moooooo", from(HttpSinkConfig::oauth2ResponseTokenProperty));
+                .returns("moooooo", from(HttpSinkConfig::oauth2ResponseTokenProperty))
+                .returns(List.of(401, 403), from(HttpSinkConfig::oauth2RenewTokenOnStatusCodes));
+    }
+
+    @Test
+    void invalidHttpErrorCode() {
+        final Map<String, String> properties = Map.of(
+                "http.url", "http://localhost:8090",
+                "http.authorization.type", "none",
+                "oauth2.token.renew.on.status.codes", "wrong"
+        );
+
+        assertThatExceptionOfType(ConfigException.class)
+                .describedAs("Expected config exception due to malformed status code list")
+                .isThrownBy(() -> new HttpSinkConfig(properties))
+                .withMessage("Invalid value [wrong] for configuration oauth2.token.renew.on.status.codes: must be a list of numbers");
     }
 
     @Test
