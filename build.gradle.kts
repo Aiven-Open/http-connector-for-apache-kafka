@@ -60,7 +60,7 @@ tasks.wrapper {
 
 val moduleName = "io.aiven.kafka.connect.http"
 
-val avroVersion = "1.9.2" // Version 1.9.2 brings Jackson 2.10.2 package for Avro
+val avroVersion = "1.12.1" // Version 1.9.2 brings Jackson 2.10.2 package for Avro
 val confluentPlatformVersion = "6.0.2" // For compatibility tests use version 6.0.2 to match Kafka 2.6.
 // NOTE: Confluent Platform v6.0.3 has a dependency mismatch issue.
 val hamcrestVersion = "2.2"
