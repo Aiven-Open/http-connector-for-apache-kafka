@@ -91,14 +91,14 @@ final class TrustStoreLoader {
                 final URL jarLocation = TrustStoreLoader.class.getProtectionDomain().getCodeSource().getLocation();
                 LOG.info("JAR location: {}", jarLocation);
                 final Path jarPath = Paths.get(jarLocation.toURI());
-                LOG.info("Using relative path against the JAR locataion: {}", jarPath);
+                LOG.info("Using relative path against the JAR location: {}", jarPath);
                 final Path parentPath = jarPath.getParent();
                 LOG.info("JAR parentPath: {}", parentPath);
                 if (parentPath == null) {
                     LOG.info("JAR has no parent directory, skipping file system lookup");
                     return null;
                 }
-                truststorePath = parentPath.resolve(path.startsWith("/") ? path.substring(1) : path);
+                truststorePath = parentPath.resolve(path);
                 LOG.info("Trying relative file system path: {}", truststorePath);
             }
             final File truststoreFile = truststorePath.toFile();
