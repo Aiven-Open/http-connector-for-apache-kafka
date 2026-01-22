@@ -20,4 +20,6 @@ import java.net.http.HttpResponse;
 
 public interface HttpSender {
     HttpResponse<String> send(final String body);
+
+    HttpResponse<String> send(final String body, String key);
 }
